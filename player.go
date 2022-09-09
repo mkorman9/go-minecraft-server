@@ -119,9 +119,13 @@ func (p *Player) OnLoginStartRequest(request *LoginStartRequest) {
 	p.signature = request.Signature
 	p.verifyToken, _ = getSecureRandomString(VerifyTokenLength)
 
-	p.state = PlayerStateAfterLoginStart
-
-	p.SendEncryptionRequest()
+	if p.world.settings.OnlineMode {
+		p.state = PlayerStateAfterLoginStart
+		p.SendEncryptionRequest()
+	} else {
+		p.state = PlayerStatePlay
+		p.SendLoginSuccessResponse()
+	}
 }
 
 func (p *Player) OnEncryptionResponse(response *EncryptionResponse) {

@@ -16,6 +16,7 @@ func main() {
 		ServerAddress: "0.0.0.0:9000",
 		Description:   "Simple Go Server",
 		MaxPlayers:    2137,
+		OnlineMode:    false,
 	}
 
 	serverKey, err := GenerateServerKey()
