@@ -1,0 +1,5 @@
+*.iml
+.idea/
+/**/.DS_Store
+go-minecraft-server
+go-minecraft-server.exe

@@ -1,0 +1,8 @@
+package main
+
+var (
+	SEGMENT_BITS = 0x7F
+	CONTINUE_BIT = 0x80
+
+	MAX_PACKET_SIZE = 25565
+)
