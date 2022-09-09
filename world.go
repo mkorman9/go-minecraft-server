@@ -8,13 +8,15 @@ import (
 type World struct {
 	settings       *Settings
 	serverListener net.Listener
+	serverKey      *ServerKey
 	playerList     *PlayerList
 }
 
-func NewWorld(settings *Settings, serverListener net.Listener) *World {
+func NewWorld(settings *Settings, serverListener net.Listener, serverKey *ServerKey) *World {
 	return &World{
 		settings:       settings,
 		serverListener: serverListener,
+		serverKey:      serverKey,
 		playerList:     NewPlayerList(),
 	}
 }

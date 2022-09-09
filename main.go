@@ -18,12 +18,17 @@ func main() {
 		MaxPlayers:    2137,
 	}
 
+	serverKey, err := GenerateServerKey()
+	if err != nil {
+		log.Fatalln(err)
+	}
+
 	listener, err := net.Listen("tcp", settings.ServerAddress)
 	if err != nil {
 		log.Fatalln(err)
 	}
 
-	world := NewWorld(settings, listener)
+	world := NewWorld(settings, listener, serverKey)
 
 	go func() {
 		shutdownSignalsChannel := make(chan os.Signal, 1)
@@ -94,6 +99,6 @@ func handleConnection(world *World, connection net.Conn) {
 			return
 		}
 
-		HandlePacket(player, packetData)
+		player.HandlePacket(packetData)
 	}
 }

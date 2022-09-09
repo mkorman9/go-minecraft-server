@@ -62,3 +62,53 @@ func (pr *PongResponse) Bytes() []byte {
 	writer.AppendInt64(pr.Payload)
 	return writer.Bytes()
 }
+
+/*
+	0x00: Login Start
+*/
+
+type LoginStartRequest struct {
+	Name      string
+	Timestamp int64
+	PublicKey string
+	Signature string
+	//PlayerUUID string
+}
+
+func ReadLoginStartRequest(reader *PacketReader) *LoginStartRequest {
+	request := &LoginStartRequest{}
+	request.Name = reader.FetchString()
+	hasSigData := reader.FetchByte() > 0
+
+	if hasSigData {
+		request.Timestamp = reader.FetchInt64()
+		request.PublicKey = reader.FetchString()
+		request.Signature = reader.FetchString()
+	}
+
+	//hasPlayerUUID := reader.FetchByte() > 0
+	//if hasPlayerUUID {
+	//	request.PlayerUUID = reader.FetchString()
+	//}
+
+	return request
+}
+
+/*
+	0x01: Encryption Request
+*/
+
+type EncryptionRequest struct {
+	ServerID    string
+	PublicKey   string
+	VerifyToken string
+}
+
+func (er *EncryptionRequest) Bytes() []byte {
+	writer := NewPacketWriter()
+	writer.AppendByte(0x01)
+	writer.AppendString(er.ServerID)
+	writer.AppendString(er.PublicKey)
+	writer.AppendString(er.VerifyToken)
+	return writer.Bytes()
+}
