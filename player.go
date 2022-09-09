@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"log"
 	"net"
 	"strings"
@@ -80,8 +79,6 @@ func (p *Player) HandlePacket(data []byte) {
 		}
 	case PlayerStatePlay:
 		switch packetId {
-		case 0x00:
-			p.OnPlayRequest()
 		}
 	}
 }
@@ -174,10 +171,6 @@ func (p *Player) OnEncryptionResponse(response *EncryptionResponse) {
 	p.state = PlayerStatePlay
 
 	p.SendLoginSuccessResponse()
-}
-
-func (p *Player) OnPlayRequest() {
-	fmt.Println("received Play")
 }
 
 func (p *Player) SendHandshakeResponse() {
