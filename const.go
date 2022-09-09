@@ -6,7 +6,7 @@ var (
 
 	ProtocolName      = "1.19"
 	ProtocolVersion   = 759
-	MaxPacketSize     = 25565
+	MaxPacketSize     = 2097151
 	ServerKeyLength   = 1024
 	VerifyTokenLength = 8
 )

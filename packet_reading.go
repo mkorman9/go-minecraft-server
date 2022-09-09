@@ -21,6 +21,10 @@ func (pr *PacketReader) FetchByte() byte {
 	return value
 }
 
+func (pr *PacketReader) FetchBool() bool {
+	return pr.FetchByte() > 0
+}
+
 func (pr *PacketReader) FetchInt16() int16 {
 	return int16(binary.BigEndian.Uint16([]byte{pr.FetchByte(), pr.FetchByte()}))
 }
@@ -34,6 +38,13 @@ func (pr *PacketReader) FetchInt64() int64 {
 		pr.FetchByte(), pr.FetchByte(), pr.FetchByte(), pr.FetchByte(),
 		pr.FetchByte(), pr.FetchByte(), pr.FetchByte(), pr.FetchByte(),
 	}))
+}
+
+func (pr *PacketReader) FetchUUID() UUID {
+	return UUID{
+		Upper: pr.FetchInt64(),
+		Lower: pr.FetchInt64(),
+	}
 }
 
 func (pr *PacketReader) FetchVarInt() int {

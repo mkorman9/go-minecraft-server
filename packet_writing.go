@@ -27,6 +27,15 @@ func (pw *PacketWriter) AppendByte(value byte) {
 	_ = pw.buffer.WriteByte(value)
 }
 
+func (pw *PacketWriter) AppendBool(value bool) {
+	var b byte
+	if value {
+		b = 1
+	}
+
+	pw.AppendByte(b)
+}
+
 func (pw *PacketWriter) AppendInt16(value int16) {
 	_ = binary.Write(pw.buffer, binary.BigEndian, value)
 }
@@ -37,6 +46,11 @@ func (pw *PacketWriter) AppendInt32(value int) {
 
 func (pw *PacketWriter) AppendInt64(value int64) {
 	_ = binary.Write(pw.buffer, binary.BigEndian, value)
+}
+
+func (pw *PacketWriter) AppendUUID(value UUID) {
+	_ = binary.Write(pw.buffer, binary.BigEndian, value.Upper)
+	_ = binary.Write(pw.buffer, binary.BigEndian, value.Lower)
 }
 
 func (pw *PacketWriter) AppendVarInt(value int) {

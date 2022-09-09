@@ -8,7 +8,7 @@ import (
 )
 
 type ServerKey struct {
-	private crypto.PrivateKey
+	private *rsa.PrivateKey
 	public  crypto.PublicKey
 
 	publicASN1 string

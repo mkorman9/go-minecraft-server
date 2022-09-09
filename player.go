@@ -4,34 +4,43 @@ import (
 	"fmt"
 	"log"
 	"net"
+	"strings"
 )
 
 type Player struct {
 	world      *World
 	connection net.Conn
+	ip         string
 
-	name        string
-	state       PlayerState
-	loggedIn    bool
-	publicKey   string
-	signature   string
-	verifyToken string
+	name         string
+	uuid         UUID
+	state        PlayerState
+	publicKey    string
+	signature    string
+	verifyToken  string
+	sharedSecret string
+	serverHash   string
+	cipherStream *CipherStream
 }
 
 type PlayerState = int
 
 const (
-	PlayerStateBeforeHandshake        = iota
-	PlayerStateAfterHandshake         = iota
-	PlayerStateAfterEncryptionRequest = iota
+	PlayerStateBeforeHandshake = iota
+	PlayerStateAfterHandshake  = iota
+	PlayerStateAfterLoginStart = iota
+	PlayerStatePlay            = iota
 )
 
 func NewPlayer(world *World, connection net.Conn) *Player {
+	ip, _, _ := strings.Cut(connection.RemoteAddr().String(), ":")
+
 	return &Player{
 		world:      world,
 		connection: connection,
+		ip:         ip,
+		uuid:       getRandomUUID(),
 		state:      PlayerStateBeforeHandshake,
-		loggedIn:   false,
 	}
 }
 
@@ -39,37 +48,47 @@ func (p *Player) Disconnect() {
 	_ = p.connection.Close()
 }
 
-func (p *Player) LogIn() {
-	p.loggedIn = true
-}
-
 func (p *Player) IsLoggedIn() bool {
-	return p.loggedIn
+	return p.state >= PlayerStatePlay
 }
 
 func (p *Player) HandlePacket(data []byte) {
 	reader := &PacketReader{data: data, cursor: 0}
 	packetId := reader.FetchVarInt()
 
-	fmt.Printf("Got packet %d\n", packetId)
-
-	switch packetId {
-	case 0x00:
-		if reader.BytesLeft() > 0 {
-			if p.state < PlayerStateAfterHandshake {
-				p.OnHandshakeRequest(ReadHandshakeRequest(reader))
+	switch p.state {
+	case PlayerStateBeforeHandshake:
+		switch packetId {
+		case 0x00:
+			if reader.BytesLeft() == 0 {
+				p.OnStatusRequest()
 			} else {
-				p.OnLoginStartRequest(ReadLoginStartRequest(reader))
+				p.OnHandshakeRequest(ReadHandshakeRequest(reader))
 			}
-		} else {
-			p.OnStatusRequest()
+		case 0x01:
+			p.OnPing(ReadPingRequest(reader))
 		}
-	case 0x01:
-		p.OnPing(ReadPingRequest(reader))
+	case PlayerStateAfterHandshake:
+		switch packetId {
+		case 0x00:
+			p.OnLoginStartRequest(ReadLoginStartRequest(reader))
+		}
+	case PlayerStateAfterLoginStart:
+		switch packetId {
+		case 0x01:
+			p.OnEncryptionResponse(ReadEncryptionResponse(reader))
+		}
+	case PlayerStatePlay:
+		switch packetId {
+		case 0x00:
+			p.OnPlayRequest()
+		}
 	}
 }
 
 func (p *Player) OnHandshakeRequest(request *HandshakeRequest) {
+	log.Println("received HandshakeRequest")
+
 	switch request.NextState {
 	case HandshakeStateStatus:
 		p.SendHandshakeResponse()
@@ -79,9 +98,12 @@ func (p *Player) OnHandshakeRequest(request *HandshakeRequest) {
 }
 
 func (p *Player) OnStatusRequest() {
+	log.Println("received StatusRequest")
 }
 
 func (p *Player) OnPing(request *PingRequest) {
+	log.Println("received Ping")
+
 	response := &PongResponse{
 		Payload: request.Payload,
 	}
@@ -90,14 +112,67 @@ func (p *Player) OnPing(request *PingRequest) {
 }
 
 func (p *Player) OnLoginStartRequest(request *LoginStartRequest) {
+	log.Println("received LoginStartRequest")
+
 	p.name = request.Name
 	p.publicKey = request.PublicKey
 	p.signature = request.Signature
 	p.verifyToken, _ = getSecureRandomString(VerifyTokenLength)
 
-	p.SendEncryptionRequest()
+	p.state = PlayerStateAfterLoginStart
 
-	p.state = PlayerStateAfterEncryptionRequest
+	p.SendEncryptionRequest()
+}
+
+func (p *Player) OnEncryptionResponse(response *EncryptionResponse) {
+	log.Println("received EncryptionResponse")
+
+	sharedSecret, err := p.world.DecryptServerMessage(response.SharedSecret)
+	if err != nil {
+		log.Printf("%v\n", err)
+		p.Disconnect()
+		return
+	}
+
+	p.sharedSecret = sharedSecret
+	p.serverHash = p.world.GenerateServerHash(sharedSecret)
+
+	if response.VerifyToken != "" {
+		verifyToken, err := p.world.DecryptServerMessage(response.VerifyToken)
+		if err != nil {
+			log.Printf("%v\n", err)
+			p.Disconnect()
+			return
+		}
+
+		if verifyToken != p.verifyToken {
+			log.Printf("token mismatch\n")
+			p.Disconnect()
+			return
+		}
+	}
+
+	// Verify user info here
+	//fmt.Printf(
+	//	"https://sessionserver.mojang.com/session/minecraft/hasJoined?username=%s&serverId=%s\n",
+	//	p.name,
+	//	p.serverHash,
+	//)
+
+	cipherStream, err := NewCipherStream(p.sharedSecret)
+	if err != nil {
+		log.Printf("%v\n", err)
+		p.Disconnect()
+		return
+	}
+
+	p.cipherStream = cipherStream
+	p.state = PlayerStatePlay
+
+	p.SendLoginSuccessResponse()
+}
+func (p *Player) OnPlayRequest() {
+	fmt.Println("received Play")
 }
 
 func (p *Player) SendHandshakeResponse() {
@@ -122,6 +197,15 @@ func (p *Player) SendEncryptionRequest() {
 		ServerID:    "",
 		PublicKey:   serverKey,
 		VerifyToken: p.verifyToken,
+	}
+
+	_, _ = p.connection.Write(response.Bytes())
+}
+
+func (p *Player) SendLoginSuccessResponse() {
+	response := &LoginSuccessResponse{
+		UUID:     p.uuid,
+		Username: p.name,
 	}
 
 	_, _ = p.connection.Write(response.Bytes())

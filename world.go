@@ -1,6 +1,10 @@
 package main
 
 import (
+	"crypto/rand"
+	"crypto/rsa"
+	"crypto/sha1"
+	"encoding/hex"
 	"log"
 	"net"
 )
@@ -58,4 +62,20 @@ func (w *World) GetServerStatus() *ServerStatus {
 		PreviewsChat:       true,
 		EnforcesSecureChat: true,
 	}
+}
+
+func (w *World) DecryptServerMessage(message string) (string, error) {
+	decrypted, err := rsa.DecryptPKCS1v15(rand.Reader, w.serverKey.private, []byte(message))
+	if err != nil {
+		return "", err
+	}
+
+	return string(decrypted), nil
+}
+
+func (w *World) GenerateServerHash(sharedSecret string) string {
+	hash := sha1.New()
+	hash.Write([]byte(sharedSecret))
+	hash.Write([]byte(w.serverKey.publicASN1))
+	return hex.EncodeToString(hash.Sum(nil))
 }
