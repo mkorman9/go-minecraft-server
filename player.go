@@ -175,6 +175,7 @@ func (p *Player) OnEncryptionResponse(response *EncryptionResponse) {
 
 	p.SendLoginSuccessResponse()
 }
+
 func (p *Player) OnPlayRequest() {
 	fmt.Println("received Play")
 }
