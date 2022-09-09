@@ -43,9 +43,9 @@ func (pr *PacketReader) FetchVarInt() int {
 
 	for {
 		currentByte = pr.FetchByte()
-		value |= int(currentByte) & SEGMENT_BITS << position
+		value |= int(currentByte) & SegmentBits << position
 
-		if (int(currentByte) & CONTINUE_BIT) == 0 {
+		if (int(currentByte) & ContinueBit) == 0 {
 			break
 		}
 
@@ -66,9 +66,9 @@ func (pr *PacketReader) FetchVarLong() int64 {
 
 	for {
 		currentByte = pr.FetchByte()
-		value |= int64(currentByte) & int64(SEGMENT_BITS) << position
+		value |= int64(currentByte) & int64(SegmentBits) << position
 
-		if (int(currentByte) & CONTINUE_BIT) == 0 {
+		if (int(currentByte) & ContinueBit) == 0 {
 			break
 		}
 
@@ -102,9 +102,9 @@ func ReadPacketSize(connection net.Conn) (int, error) {
 		}
 
 		currentByte = buff[0]
-		value |= int(currentByte) & SEGMENT_BITS << position
+		value |= int(currentByte) & SegmentBits << position
 
-		if (int(currentByte) & CONTINUE_BIT) == 0 {
+		if (int(currentByte) & ContinueBit) == 0 {
 			break
 		}
 

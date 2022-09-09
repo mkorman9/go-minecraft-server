@@ -1,15 +1,26 @@
 package main
 
-import "log"
+import (
+	"log"
+	"net"
+)
 
 type World struct {
-	playerList *PlayerList
+	settings       *Settings
+	serverListener net.Listener
+	playerList     *PlayerList
 }
 
-func NewWorld() *World {
+func NewWorld(settings *Settings, serverListener net.Listener) *World {
 	return &World{
-		playerList: NewPlayerList(),
+		settings:       settings,
+		serverListener: serverListener,
+		playerList:     NewPlayerList(),
 	}
+}
+
+func (w *World) Shutdown() {
+	_ = w.serverListener.Close()
 }
 
 func (w *World) RegisterPlayer(player *Player) {
@@ -31,16 +42,16 @@ func (w *World) GetPlayersCount() int {
 func (w *World) GetServerStatus() *ServerStatus {
 	return &ServerStatus{
 		Version: ServerStatusVersion{
-			Name:     "1.19",
-			Protocol: 759,
+			Name:     ProtocolName,
+			Protocol: ProtocolVersion,
 		},
 		Players: ServerStatusPlayers{
-			Max:    2137,
+			Max:    w.settings.MaxPlayers,
 			Online: w.GetPlayersCount(),
 			Sample: nil,
 		},
 		Description: ServerStatusDescription{
-			Text: "Simple Go Server",
+			Text: w.settings.Description,
 		},
 		PreviewsChat:       true,
 		EnforcesSecureChat: true,

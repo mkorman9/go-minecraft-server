@@ -1,8 +1,10 @@
 package main
 
 var (
-	SEGMENT_BITS = 0x7F
-	CONTINUE_BIT = 0x80
+	SegmentBits = 0x7F
+	ContinueBit = 0x80
 
-	MAX_PACKET_SIZE = 25565
+	ProtocolName    = "1.19"
+	ProtocolVersion = 759
+	MaxPacketSize   = 25565
 )

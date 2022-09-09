@@ -12,10 +12,18 @@ import (
 func main() {
 	log.SetFlags(log.LstdFlags | log.Lshortfile)
 
-	listener, err := net.Listen("tcp", "0.0.0.0:9000")
+	settings := &Settings{
+		ServerAddress: "0.0.0.0:9000",
+		Description:   "Simple Go Server",
+		MaxPlayers:    2137,
+	}
+
+	listener, err := net.Listen("tcp", settings.ServerAddress)
 	if err != nil {
 		log.Fatalln(err)
 	}
+
+	world := NewWorld(settings, listener)
 
 	go func() {
 		shutdownSignalsChannel := make(chan os.Signal, 1)
@@ -23,12 +31,10 @@ func main() {
 
 		<-shutdownSignalsChannel
 
-		_ = listener.Close()
+		world.Shutdown()
 	}()
 
 	log.Println("server listening")
-
-	world := NewWorld()
 
 	for {
 		connection, err := listener.Accept()
@@ -74,7 +80,7 @@ func handleConnection(world *World, connection net.Conn) {
 			return
 		}
 
-		if packetSize > MAX_PACKET_SIZE {
+		if packetSize > MaxPacketSize {
 			log.Println("invalid packet size")
 			player.Disconnect()
 			return
