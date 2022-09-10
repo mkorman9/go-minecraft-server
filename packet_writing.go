@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"encoding/binary"
+	"github.com/mkorman9/go-minecraft-server/nbt"
 )
 
 type PacketWriter struct {
@@ -82,4 +83,13 @@ func (pw *PacketWriter) AppendVarLong(value int64) {
 func (pw *PacketWriter) AppendString(value string) {
 	pw.AppendVarInt(len(value))
 	pw.buffer.Write([]byte(value))
+}
+
+func (pw *PacketWriter) AppendNBT(obj any) {
+	data, _ := nbt.Marshal(obj)
+	_, _ = pw.buffer.Write(data)
+}
+
+func (pw *PacketWriter) AppendPosition(position *Position) {
+	pw.AppendInt64(position.ToInt64())
 }

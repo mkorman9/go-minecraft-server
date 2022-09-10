@@ -100,6 +100,15 @@ func (pr *PacketReader) FetchString() string {
 	return value
 }
 
+func (pr *PacketReader) FetchNBT() {
+	// TODO
+}
+
+func (pr *PacketReader) FetchPosition() *Position {
+	value := pr.FetchInt64()
+	return PositionFromInt64(value)
+}
+
 func ReadPacketSize(connection net.Conn) (int, error) {
 	var value int
 	var position int
