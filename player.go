@@ -2,6 +2,7 @@ package main
 
 import (
 	"crypto/rsa"
+	"io"
 	"log"
 	"net"
 	"strings"
@@ -10,24 +11,25 @@ import (
 type Player struct {
 	world      *World
 	connection net.Conn
-	ip         string
+	reader     io.Reader
+	writer     io.Writer
 
 	name         string
 	uuid         UUID
+	ip           string
 	state        PlayerState
 	publicKey    *rsa.PublicKey
 	verifyToken  string
 	sharedSecret string
 	serverHash   string
-	cipherStream *CipherStream
 }
 
 type PlayerState = int
 
 const (
 	PlayerStateBeforeHandshake = iota
-	PlayerStateAfterHandshake  = iota
-	PlayerStateAfterLoginStart = iota
+	PlayerStateLogin           = iota
+	PlayerStateEncryption      = iota
 	PlayerStatePlay            = iota
 )
 
@@ -37,6 +39,8 @@ func NewPlayer(world *World, connection net.Conn) *Player {
 	return &Player{
 		world:      world,
 		connection: connection,
+		reader:     connection,
+		writer:     connection,
 		ip:         ip,
 		uuid:       getRandomUUID(),
 		state:      PlayerStateBeforeHandshake,
@@ -47,8 +51,8 @@ func (p *Player) Disconnect() {
 	_ = p.connection.Close()
 }
 
-func (p *Player) IsLoggedIn() bool {
-	return p.state >= PlayerStatePlay
+func (p *Player) IsOnline() bool {
+	return p.state == PlayerStatePlay
 }
 
 func (p *Player) HandlePacket(data []byte) {
@@ -67,12 +71,12 @@ func (p *Player) HandlePacket(data []byte) {
 		case 0x01:
 			p.OnPing(ReadPingRequest(reader))
 		}
-	case PlayerStateAfterHandshake:
+	case PlayerStateLogin:
 		switch packetId {
 		case 0x00:
 			p.OnLoginStartRequest(ReadLoginStartRequest(reader))
 		}
-	case PlayerStateAfterLoginStart:
+	case PlayerStateEncryption:
 		switch packetId {
 		case 0x01:
 			p.OnEncryptionResponse(ReadEncryptionResponse(reader))
@@ -90,7 +94,7 @@ func (p *Player) OnHandshakeRequest(request *HandshakeRequest) {
 	case HandshakeStateStatus:
 		p.SendHandshakeResponse()
 	case HandshakeStateLogin:
-		p.state = PlayerStateAfterHandshake
+		p.state = PlayerStateLogin
 	}
 }
 
@@ -126,7 +130,7 @@ func (p *Player) OnLoginStartRequest(request *LoginStartRequest) {
 	}
 
 	if p.world.settings.OnlineMode {
-		p.state = PlayerStateAfterLoginStart
+		p.state = PlayerStateEncryption
 		p.SendEncryptionRequest()
 	} else {
 		p.state = PlayerStatePlay
@@ -181,17 +185,11 @@ func (p *Player) OnEncryptionResponse(response *EncryptionResponse) {
 	//	p.serverHash,
 	//)
 
-	cipherStream, err := NewCipherStream(p.sharedSecret)
-	if err != nil {
-		log.Printf("%v\n", err)
-		p.Disconnect()
-		return
-	}
-
-	p.cipherStream = cipherStream
 	p.state = PlayerStatePlay
-
 	p.SendLoginSuccessResponse()
+	p.setupEncryption()
+
+	p.OnPlayStart()
 }
 
 func (p *Player) OnPlayStart() {
@@ -209,7 +207,7 @@ func (p *Player) SendHandshakeResponse() {
 		StatusJSON: serverStatusJSON,
 	}
 
-	_, _ = p.connection.Write(response.Bytes())
+	p.writePacket(response.Bytes())
 }
 
 func (p *Player) SendEncryptionRequest() {
@@ -221,7 +219,7 @@ func (p *Player) SendEncryptionRequest() {
 		VerifyToken: p.verifyToken,
 	}
 
-	_, _ = p.connection.Write(response.Bytes())
+	p.writePacket(response.Bytes())
 }
 
 func (p *Player) SendLoginSuccessResponse() {
@@ -230,9 +228,7 @@ func (p *Player) SendLoginSuccessResponse() {
 		Username: p.name,
 	}
 
-	_, _ = p.connection.Write(response.Bytes())
-
-	p.OnPlayStart()
+	p.writePacket(response.Bytes())
 }
 
 func (p *Player) SendDisconnect(reason *ChatMessage) {
@@ -240,7 +236,22 @@ func (p *Player) SendDisconnect(reason *ChatMessage) {
 		Reason: reason,
 	}
 
-	_, _ = p.connection.Write(response.Bytes())
-
+	p.writePacket(response.Bytes())
 	p.Disconnect()
+}
+
+func (p *Player) setupEncryption() {
+	cipherStream, err := NewCipherStream(p.sharedSecret)
+	if err != nil {
+		log.Printf("%v\n", err)
+		p.Disconnect()
+		return
+	}
+
+	p.reader = cipherStream.WrapReader(p.reader)
+	p.writer = cipherStream.WrapWriter(p.writer)
+}
+
+func (p *Player) writePacket(data []byte) {
+	_, _ = p.writer.Write(data)
 }

@@ -3,7 +3,7 @@ package main
 import (
 	"encoding/binary"
 	"errors"
-	"net"
+	"io"
 )
 
 type PacketReader struct {
@@ -109,14 +109,14 @@ func (pr *PacketReader) FetchPosition() *Position {
 	return PositionFromInt64(value)
 }
 
-func ReadPacketSize(connection net.Conn) (int, error) {
+func ReadPacketSize(reader io.Reader) (int, error) {
 	var value int
 	var position int
 	var currentByte byte
 
 	for {
 		buff := make([]byte, 1)
-		_, err := connection.Read(buff)
+		_, err := reader.Read(buff)
 		if err != nil {
 			return -1, err
 		}

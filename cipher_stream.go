@@ -3,6 +3,7 @@ package main
 import (
 	"crypto/aes"
 	"crypto/cipher"
+	"io"
 )
 
 type CipherStream struct {
@@ -28,14 +29,16 @@ func NewCipherStream(key string) (*CipherStream, error) {
 	}, nil
 }
 
-func (cs *CipherStream) Encrypt(plainText []byte) []byte {
-	cipherText := make([]byte, len(plainText))
-	cs.encrypter.XORKeyStream(cipherText, plainText)
-	return cipherText
+func (cs *CipherStream) WrapReader(reader io.Reader) io.Reader {
+	return &cipher.StreamReader{
+		S: cs.decrypter,
+		R: reader,
+	}
 }
 
-func (cs *CipherStream) Decrypt(cipherText []byte) []byte {
-	plainText := make([]byte, len(cipherText))
-	cs.encrypter.XORKeyStream(plainText, cipherText)
-	return plainText
+func (cs *CipherStream) WrapWriter(writer io.Writer) io.Writer {
+	return &cipher.StreamWriter{
+		S: cs.encrypter,
+		W: writer,
+	}
 }

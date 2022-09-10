@@ -42,7 +42,7 @@ func (w *World) UnregisterPlayer(player *Player) {
 }
 
 func (w *World) GetPlayersCount() int {
-	return w.playerList.GetLoggedInSize()
+	return w.playerList.GetOnlineSize()
 }
 
 func (w *World) GetServerStatus() *ServerStatus {

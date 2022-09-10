@@ -74,7 +74,7 @@ func handleConnection(world *World, connection net.Conn) {
 	}()
 
 	for {
-		packetSize, err := ReadPacketSize(connection)
+		packetSize, err := ReadPacketSize(player.reader)
 		if err != nil {
 			if err == io.EOF {
 				player.Disconnect()
@@ -98,7 +98,7 @@ func handleConnection(world *World, connection net.Conn) {
 		}
 
 		packetData := make([]byte, packetSize)
-		_, err = connection.Read(packetData)
+		_, err = player.reader.Read(packetData)
 		if err != nil {
 			log.Printf("%v\n", err)
 			player.Disconnect()

@@ -37,20 +37,13 @@ func (pl *PlayerList) UnregisterPlayer(player *Player) {
 	}
 }
 
-func (pl *PlayerList) GetTotalSize() int {
-	pl.m.RLock()
-	defer pl.m.RUnlock()
-
-	return len(pl.list)
-}
-
-func (pl *PlayerList) GetLoggedInSize() int {
+func (pl *PlayerList) GetOnlineSize() int {
 	pl.m.RLock()
 	defer pl.m.RUnlock()
 
 	count := 0
 	for _, player := range pl.list {
-		if player.IsLoggedIn() {
+		if player.IsOnline() {
 			count++
 		}
 	}
