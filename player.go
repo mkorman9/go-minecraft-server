@@ -111,16 +111,19 @@ func (p *Player) OnPing(request *PingRequest) {
 func (p *Player) OnLoginStartRequest(request *LoginStartRequest) {
 	log.Println("received LoginStartRequest")
 
-	publicKey, err := loadPublicKey(request.PublicKey)
-	if err != nil {
-		log.Printf("%v\n", err)
-		p.Disconnect()
-		return
-	}
-
 	p.name = request.Name
-	p.publicKey = publicKey
 	p.verifyToken, _ = getSecureRandomString(VerifyTokenLength)
+
+	if request.PublicKey != "" {
+		publicKey, err := loadPublicKey(request.PublicKey)
+		if err != nil {
+			log.Printf("%v\n", err)
+			p.Disconnect()
+			return
+		}
+
+		p.publicKey = publicKey
+	}
 
 	if p.world.settings.OnlineMode {
 		p.state = PlayerStateAfterLoginStart
