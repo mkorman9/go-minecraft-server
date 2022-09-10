@@ -41,8 +41,8 @@ func NewPlayer(world *World, connection net.Conn) *Player {
 		connection: connection,
 		reader:     connection,
 		writer:     connection,
-		ip:         ip,
 		uuid:       getRandomUUID(),
+		ip:         ip,
 		state:      PlayerStateBeforeHandshake,
 	}
 }
@@ -135,6 +135,8 @@ func (p *Player) OnLoginStartRequest(request *LoginStartRequest) {
 	} else {
 		p.state = PlayerStatePlay
 		p.SendLoginSuccessResponse()
+
+		p.OnPlayStart()
 	}
 }
 

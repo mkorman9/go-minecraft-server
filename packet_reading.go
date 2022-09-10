@@ -1,9 +1,12 @@
 package main
 
 import (
+	"bytes"
 	"encoding/binary"
 	"errors"
+	"github.com/mkorman9/go-minecraft-server/nbt"
 	"io"
+	"math"
 )
 
 type PacketReader struct {
@@ -100,8 +103,12 @@ func (pr *PacketReader) FetchString() string {
 	return value
 }
 
-func (pr *PacketReader) FetchNBT() {
-	// TODO
+func (pr *PacketReader) FetchNBT(v any) {
+	buff := pr.data[pr.cursor:]
+	reader := &io.LimitedReader{R: bytes.NewBuffer(buff), N: math.MaxInt64}
+
+	_, _ = nbt.NewDecoder(reader).Decode(v)
+	pr.cursor += int(math.MaxInt64 - reader.N)
 }
 
 func (pr *PacketReader) FetchPosition() *Position {

@@ -86,6 +86,11 @@ func (pw *PacketWriter) AppendString(value string) {
 }
 
 func (pw *PacketWriter) AppendNBT(obj any) {
+	if obj == nil {
+		pw.AppendByte(nbt.TagEnd)
+		return
+	}
+
 	data, _ := nbt.Marshal(obj)
 	_, _ = pw.buffer.Write(data)
 }
