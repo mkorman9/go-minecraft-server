@@ -1,6 +1,7 @@
 package main
 
 import (
+	"crypto/rsa"
 	"log"
 	"net"
 	"strings"
@@ -14,8 +15,7 @@ type Player struct {
 	name         string
 	uuid         UUID
 	state        PlayerState
-	publicKey    string
-	signature    string
+	publicKey    *rsa.PublicKey
 	verifyToken  string
 	sharedSecret string
 	serverHash   string
@@ -111,9 +111,15 @@ func (p *Player) OnPing(request *PingRequest) {
 func (p *Player) OnLoginStartRequest(request *LoginStartRequest) {
 	log.Println("received LoginStartRequest")
 
+	publicKey, err := loadPublicKey(request.PublicKey)
+	if err != nil {
+		log.Printf("%v\n", err)
+		p.Disconnect()
+		return
+	}
+
 	p.name = request.Name
-	p.publicKey = request.PublicKey
-	p.signature = request.Signature
+	p.publicKey = publicKey
 	p.verifyToken, _ = getSecureRandomString(VerifyTokenLength)
 
 	if p.world.settings.OnlineMode {
@@ -151,6 +157,18 @@ func (p *Player) OnEncryptionResponse(response *EncryptionResponse) {
 			p.Disconnect()
 			return
 		}
+	} else {
+		err = verifyRsaSignature(
+			p.publicKey,
+			p.verifyToken,
+			response.Salt,
+			response.MessageSignature,
+		)
+		if err != nil {
+			log.Printf("%v\n", err)
+			p.Disconnect()
+			return
+		}
 	}
 
 	// Verify user info here
@@ -171,6 +189,9 @@ func (p *Player) OnEncryptionResponse(response *EncryptionResponse) {
 	p.state = PlayerStatePlay
 
 	p.SendLoginSuccessResponse()
+}
+
+func (p *Player) OnPlayStart() {
 }
 
 func (p *Player) SendHandshakeResponse() {
@@ -207,4 +228,16 @@ func (p *Player) SendLoginSuccessResponse() {
 	}
 
 	_, _ = p.connection.Write(response.Bytes())
+
+	p.OnPlayStart()
+}
+
+func (p *Player) SendDisconnect(reason *ChatMessage) {
+	response := &DisconnectPacket{
+		Reason: reason,
+	}
+
+	_, _ = p.connection.Write(response.Bytes())
+
+	p.Disconnect()
 }

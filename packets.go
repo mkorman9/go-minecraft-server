@@ -174,3 +174,19 @@ func (lsr *LoginSuccessResponse) Bytes() []byte {
 
 	return writer.Bytes()
 }
+
+/*
+	0x19: Disconnect
+*/
+
+type DisconnectPacket struct {
+	Reason *ChatMessage
+}
+
+func (dp *DisconnectPacket) Bytes() []byte {
+	writer := NewPacketWriter()
+	writer.AppendByte(0x19)
+	writer.AppendString(dp.Reason.Encode())
+
+	return writer.Bytes()
+}

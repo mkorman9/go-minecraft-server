@@ -80,6 +80,11 @@ func handleConnection(world *World, connection net.Conn) {
 				player.Disconnect()
 				return
 			}
+			if netOpError, ok := err.(*net.OpError); ok {
+				if netOpError.Err.Error() == "use of closed network connection" {
+					return
+				}
+			}
 
 			log.Printf("%v\n", err)
 			player.Disconnect()

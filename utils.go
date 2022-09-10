@@ -1,7 +1,11 @@
 package main
 
 import (
+	"crypto"
 	"crypto/rand"
+	"crypto/rsa"
+	"crypto/sha256"
+	"crypto/x509"
 	"encoding/binary"
 	"encoding/hex"
 	"github.com/gofrs/uuid"
@@ -25,4 +29,24 @@ func getRandomUUID() UUID {
 		Upper: upper,
 		Lower: lower,
 	}
+}
+
+func loadPublicKey(publicKey string) (*rsa.PublicKey, error) {
+	key, err := x509.ParsePKIXPublicKey([]byte(publicKey))
+	if err != nil {
+		return nil, err
+	}
+
+	return key.(*rsa.PublicKey), nil
+}
+
+func verifyRsaSignature(publicKey *rsa.PublicKey, msg string, salt int64, signature string) error {
+	saltEncoded := make([]byte, 8)
+	binary.BigEndian.PutUint64(saltEncoded, uint64(salt))
+
+	msgToHash := []byte(msg)
+	msgToHash = append(msgToHash, saltEncoded...)
+
+	hash := sha256.Sum256(msgToHash)
+	return rsa.VerifyPKCS1v15(publicKey, crypto.SHA256, hash[:], []byte(signature))
 }
