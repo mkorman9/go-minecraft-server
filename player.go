@@ -9,10 +9,11 @@ import (
 )
 
 type Player struct {
-	world      *World
-	connection net.Conn
-	reader     io.Reader
-	writer     io.Writer
+	world        *World
+	connection   net.Conn
+	reader       io.Reader
+	writer       io.Writer
+	packetWriter *PacketWriter
 
 	name         string
 	uuid         UUID
@@ -37,13 +38,14 @@ func NewPlayer(world *World, connection net.Conn) *Player {
 	ip, _, _ := strings.Cut(connection.RemoteAddr().String(), ":")
 
 	return &Player{
-		world:      world,
-		connection: connection,
-		reader:     connection,
-		writer:     connection,
-		uuid:       getRandomUUID(),
-		ip:         ip,
-		state:      PlayerStateBeforeHandshake,
+		world:        world,
+		connection:   connection,
+		reader:       connection,
+		writer:       connection,
+		packetWriter: NewPacketWriter(),
+		uuid:         getRandomUUID(),
+		ip:           ip,
+		state:        PlayerStateBeforeHandshake,
 	}
 }
 
@@ -56,7 +58,7 @@ func (p *Player) IsOnline() bool {
 }
 
 func (p *Player) HandlePacket(data []byte) {
-	reader := &PacketReader{data: data, cursor: 0}
+	reader := NewPacketReaderContext(data)
 	packetId := reader.FetchVarInt()
 
 	switch p.state {
@@ -66,20 +68,20 @@ func (p *Player) HandlePacket(data []byte) {
 			if reader.BytesLeft() == 0 {
 				p.OnStatusRequest()
 			} else {
-				p.OnHandshakeRequest(ReadHandshakeRequest(reader))
+				p.OnHandshakeRequest(UnmarshalPacket(reader, &HandshakeRequest{}))
 			}
 		case 0x01:
-			p.OnPing(ReadPingRequest(reader))
+			p.OnPing(UnmarshalPacket(reader, &PingRequest{}))
 		}
 	case PlayerStateLogin:
 		switch packetId {
 		case 0x00:
-			p.OnLoginStartRequest(ReadLoginStartRequest(reader))
+			p.OnLoginStartRequest(UnmarshalPacket(reader, &LoginStartRequest{}))
 		}
 	case PlayerStateEncryption:
 		switch packetId {
 		case 0x01:
-			p.OnEncryptionResponse(ReadEncryptionResponse(reader))
+			p.OnEncryptionResponse(UnmarshalPacket(reader, &EncryptionResponse{}))
 		}
 	case PlayerStatePlay:
 		switch packetId {
@@ -87,7 +89,11 @@ func (p *Player) HandlePacket(data []byte) {
 	}
 }
 
-func (p *Player) OnHandshakeRequest(request *HandshakeRequest) {
+func (p *Player) OnHandshakeRequest(request *HandshakeRequest, err error) {
+	if err != nil {
+		return // ignore request
+	}
+
 	log.Println("received HandshakeRequest")
 
 	switch request.NextState {
@@ -102,17 +108,23 @@ func (p *Player) OnStatusRequest() {
 	log.Println("received StatusRequest")
 }
 
-func (p *Player) OnPing(request *PingRequest) {
-	log.Println("received Ping")
-
-	response := &PongResponse{
-		Payload: request.Payload,
+func (p *Player) OnPing(request *PingRequest, err error) {
+	if err != nil {
+		return // ignore request
 	}
 
-	_, _ = p.connection.Write(response.Bytes())
+	log.Println("received Ping")
+
+	p.SendPongResponse(request.Payload)
 }
 
-func (p *Player) OnLoginStartRequest(request *LoginStartRequest) {
+func (p *Player) OnLoginStartRequest(request *LoginStartRequest, err error) {
+	if err != nil {
+		p.SendCancelLogin(NewChatMessage("Invalid Login Request"))
+		p.Disconnect()
+		return
+	}
+
 	log.Println("received LoginStartRequest")
 
 	p.name = request.Name
@@ -122,6 +134,7 @@ func (p *Player) OnLoginStartRequest(request *LoginStartRequest) {
 		publicKey, err := loadPublicKey(request.PublicKey)
 		if err != nil {
 			log.Printf("%v\n", err)
+			p.SendCancelLogin(NewChatMessage("Malformed Public Key"))
 			p.Disconnect()
 			return
 		}
@@ -140,12 +153,19 @@ func (p *Player) OnLoginStartRequest(request *LoginStartRequest) {
 	}
 }
 
-func (p *Player) OnEncryptionResponse(response *EncryptionResponse) {
+func (p *Player) OnEncryptionResponse(response *EncryptionResponse, err error) {
+	if err != nil {
+		p.SendCancelLogin(NewChatMessage("Invalid Login Request"))
+		p.Disconnect()
+		return
+	}
+
 	log.Println("received EncryptionResponse")
 
 	sharedSecret, err := p.world.DecryptServerMessage(response.SharedSecret)
 	if err != nil {
 		log.Printf("%v\n", err)
+		p.SendCancelLogin(NewChatMessage("Malformed Shared Secret"))
 		p.Disconnect()
 		return
 	}
@@ -157,12 +177,14 @@ func (p *Player) OnEncryptionResponse(response *EncryptionResponse) {
 		verifyToken, err := p.world.DecryptServerMessage(response.VerifyToken)
 		if err != nil {
 			log.Printf("%v\n", err)
+			p.SendCancelLogin(NewChatMessage("Malformed Verify Token"))
 			p.Disconnect()
 			return
 		}
 
 		if verifyToken != p.verifyToken {
 			log.Printf("token mismatch\n")
+			p.SendCancelLogin(NewChatMessage("Token mismatch"))
 			p.Disconnect()
 			return
 		}
@@ -175,6 +197,7 @@ func (p *Player) OnEncryptionResponse(response *EncryptionResponse) {
 		)
 		if err != nil {
 			log.Printf("%v\n", err)
+			p.SendCancelLogin(NewChatMessage("Signature verification error"))
 			p.Disconnect()
 			return
 		}
@@ -195,6 +218,7 @@ func (p *Player) OnEncryptionResponse(response *EncryptionResponse) {
 }
 
 func (p *Player) OnPlayStart() {
+	p.SendPlayPacket()
 }
 
 func (p *Player) SendHandshakeResponse() {
@@ -209,7 +233,23 @@ func (p *Player) SendHandshakeResponse() {
 		StatusJSON: serverStatusJSON,
 	}
 
-	p.writePacket(response.Bytes())
+	p.writePacket(response)
+}
+
+func (p *Player) SendPongResponse(payload int64) {
+	packet := &PongResponse{
+		Payload: payload,
+	}
+
+	p.writePacket(packet)
+}
+
+func (p *Player) SendCancelLogin(reason *ChatMessage) {
+	packet := &CancelLoginPacket{
+		Reason: reason,
+	}
+
+	p.writePacket(packet)
 }
 
 func (p *Player) SendEncryptionRequest() {
@@ -221,7 +261,15 @@ func (p *Player) SendEncryptionRequest() {
 		VerifyToken: p.verifyToken,
 	}
 
-	p.writePacket(response.Bytes())
+	p.writePacket(response)
+}
+
+func (p *Player) SendSetCompressionRequest() {
+	request := &SetCompressionRequest{
+		Threshold: p.world.settings.CompressionThreshold,
+	}
+
+	p.writePacket(request)
 }
 
 func (p *Player) SendLoginSuccessResponse() {
@@ -230,7 +278,7 @@ func (p *Player) SendLoginSuccessResponse() {
 		Username: p.name,
 	}
 
-	p.writePacket(response.Bytes())
+	p.writePacket(response)
 }
 
 func (p *Player) SendDisconnect(reason *ChatMessage) {
@@ -238,8 +286,31 @@ func (p *Player) SendDisconnect(reason *ChatMessage) {
 		Reason: reason,
 	}
 
-	p.writePacket(response.Bytes())
+	p.writePacket(response)
 	p.Disconnect()
+}
+
+func (p *Player) SendPlayPacket() {
+	packet := &PlayPacket{
+		EntityID:            0,
+		IsHardcore:          false,
+		GameMode:            0,
+		PreviousGameMode:    0xff,
+		WorldNames:          []string{"world"},
+		RegistryCodec:       DefaultRegistryCodec(),
+		WorldType:           "world",
+		WorldName:           "world",
+		HashedSeed:          1,
+		MaxPlayers:          p.world.settings.MaxPlayers,
+		ViewDistance:        10,
+		SimulationDistance:  10,
+		ReducedDebugInfo:    false,
+		EnableRespawnScreen: true,
+		IsDebug:             true,
+		IsFlat:              false,
+	}
+
+	p.writePacket(packet)
 }
 
 func (p *Player) setupEncryption() {
@@ -254,6 +325,22 @@ func (p *Player) setupEncryption() {
 	p.writer = cipherStream.WrapWriter(p.writer)
 }
 
-func (p *Player) writePacket(data []byte) {
-	_, _ = p.writer.Write(data)
+func (p *Player) setupCompression(threshold int) {
+	p.packetWriter.EnableCompression(threshold)
+}
+
+func (p *Player) writePacket(packet Packet) {
+	data, err := packet.Marshal(p.packetWriter.New())
+	if err != nil {
+		log.Printf("%v\n", err)
+		p.Disconnect()
+		return
+	}
+
+	_, err = p.writer.Write(data)
+	if err != nil {
+		log.Printf("%v\n", err)
+		p.Disconnect()
+		return
+	}
 }

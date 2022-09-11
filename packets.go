@@ -1,8 +1,13 @@
 package main
 
-type UUID struct {
-	Upper int64
-	Lower int64
+type Packet interface {
+	Marshal(writer *PacketWriterContext) ([]byte, error)
+	Unmarshal(reader *PacketReaderContext) error
+}
+
+func UnmarshalPacket[P Packet](reader *PacketReaderContext, p P) (P, error) {
+	err := p.Unmarshal(reader)
+	return p, err
 }
 
 /*
@@ -23,24 +28,36 @@ type HandshakeRequest struct {
 	NextState       HandshakeState
 }
 
-func ReadHandshakeRequest(reader *PacketReader) *HandshakeRequest {
-	request := &HandshakeRequest{}
-	request.ProtocolVersion = reader.FetchVarInt()
-	request.ServerAddress = reader.FetchString()
-	request.ServerPort = reader.FetchInt16()
-	request.NextState = reader.FetchVarInt()
-	return request
+func (hr *HandshakeRequest) Marshal(ctx *PacketWriterContext) ([]byte, error) {
+	return nil, nil
+}
+
+func (hr *HandshakeRequest) Unmarshal(reader *PacketReaderContext) error {
+	hr.ProtocolVersion = reader.FetchVarInt()
+	hr.ServerAddress = reader.FetchString()
+	hr.ServerPort = reader.FetchInt16()
+	hr.NextState = reader.FetchVarInt()
+
+	return reader.Error()
 }
 
 type HandshakeResponse struct {
 	StatusJSON string
 }
 
-func (hr *HandshakeResponse) Bytes() []byte {
-	writer := NewPacketWriter()
+func (hr *HandshakeResponse) Marshal(writer *PacketWriterContext) ([]byte, error) {
 	writer.AppendByte(0x00)
 	writer.AppendString(hr.StatusJSON)
-	return writer.Bytes()
+
+	if writer.Error() != nil {
+		return nil, writer.Error()
+	}
+
+	return writer.Bytes(), nil
+}
+
+func (hr *HandshakeResponse) Unmarshal(reader *PacketReaderContext) error {
+	return nil
 }
 
 /*
@@ -51,21 +68,32 @@ type PingRequest struct {
 	Payload int64
 }
 
-func ReadPingRequest(reader *PacketReader) *PingRequest {
-	request := &PingRequest{}
-	request.Payload = reader.FetchInt64()
-	return request
+func (pr *PingRequest) Marshal(writer *PacketWriterContext) ([]byte, error) {
+	return nil, nil
+}
+
+func (pr *PingRequest) Unmarshal(reader *PacketReaderContext) error {
+	pr.Payload = reader.FetchInt64()
+	return reader.Error()
 }
 
 type PongResponse struct {
 	Payload int64
 }
 
-func (pr *PongResponse) Bytes() []byte {
-	writer := NewPacketWriter()
+func (pr *PongResponse) Marshal(writer *PacketWriterContext) ([]byte, error) {
 	writer.AppendByte(0x01)
 	writer.AppendInt64(pr.Payload)
-	return writer.Bytes()
+
+	if writer.Error() != nil {
+		return nil, writer.Error()
+	}
+
+	return writer.Bytes(), nil
+}
+
+func (pr *PongResponse) Unmarshal(reader *PacketReaderContext) error {
+	return nil
 }
 
 /*
@@ -79,18 +107,21 @@ type LoginStartRequest struct {
 	Signature string
 }
 
-func ReadLoginStartRequest(reader *PacketReader) *LoginStartRequest {
-	request := &LoginStartRequest{}
-	request.Name = reader.FetchString()
+func (lsr *LoginStartRequest) Marshal(writer *PacketWriterContext) ([]byte, error) {
+	return nil, nil
+}
+
+func (lsr *LoginStartRequest) Unmarshal(reader *PacketReaderContext) error {
+	lsr.Name = reader.FetchString()
 	hasSigData := reader.FetchBool()
 
 	if hasSigData {
-		request.Timestamp = reader.FetchInt64()
-		request.PublicKey = reader.FetchString()
-		request.Signature = reader.FetchString()
+		lsr.Timestamp = reader.FetchInt64()
+		lsr.PublicKey = reader.FetchString()
+		lsr.Signature = reader.FetchString()
 	}
 
-	return request
+	return reader.Error()
 }
 
 /*
@@ -103,13 +134,44 @@ type EncryptionRequest struct {
 	VerifyToken string
 }
 
-func (er *EncryptionRequest) Bytes() []byte {
-	writer := NewPacketWriter()
+func (er *EncryptionRequest) Marshal(writer *PacketWriterContext) ([]byte, error) {
 	writer.AppendByte(0x01)
 	writer.AppendString(er.ServerID)
 	writer.AppendString(er.PublicKey)
 	writer.AppendString(er.VerifyToken)
-	return writer.Bytes()
+
+	if writer.Error() != nil {
+		return nil, writer.Error()
+	}
+
+	return writer.Bytes(), nil
+}
+
+func (er *EncryptionRequest) Unmarshal(reader *PacketReaderContext) error {
+	return nil
+}
+
+/*
+	0x00: Cancel Login
+*/
+
+type CancelLoginPacket struct {
+	Reason *ChatMessage
+}
+
+func (clp *CancelLoginPacket) Marshal(writer *PacketWriterContext) ([]byte, error) {
+	writer.AppendByte(0x00)
+	writer.AppendString(clp.Reason.Encode())
+
+	if writer.Error() != nil {
+		return nil, writer.Error()
+	}
+
+	return writer.Bytes(), nil
+}
+
+func (clp *CancelLoginPacket) Unmarshal(reader *PacketReaderContext) error {
+	return nil
 }
 
 /*
@@ -123,19 +185,22 @@ type EncryptionResponse struct {
 	MessageSignature string
 }
 
-func ReadEncryptionResponse(reader *PacketReader) *EncryptionResponse {
-	response := &EncryptionResponse{}
-	response.SharedSecret = reader.FetchString()
+func (er *EncryptionResponse) Marshal(writer *PacketWriterContext) ([]byte, error) {
+	return nil, nil
+}
+
+func (er *EncryptionResponse) Unmarshal(reader *PacketReaderContext) error {
+	er.SharedSecret = reader.FetchString()
 	hasVerifyToken := reader.FetchBool()
 
 	if hasVerifyToken {
-		response.VerifyToken = reader.FetchString()
+		er.VerifyToken = reader.FetchString()
 	} else {
-		response.Salt = reader.FetchInt64()
-		response.MessageSignature = reader.FetchString()
+		er.Salt = reader.FetchInt64()
+		er.MessageSignature = reader.FetchString()
 	}
 
-	return response
+	return reader.Error()
 }
 
 /*
@@ -155,8 +220,7 @@ type LoginSuccessResponseProperty struct {
 	Signature string
 }
 
-func (lsr *LoginSuccessResponse) Bytes() []byte {
-	writer := NewPacketWriter()
+func (lsr *LoginSuccessResponse) Marshal(writer *PacketWriterContext) ([]byte, error) {
 	writer.AppendByte(0x02)
 	writer.AppendUUID(lsr.UUID)
 	writer.AppendString(lsr.Username)
@@ -172,7 +236,38 @@ func (lsr *LoginSuccessResponse) Bytes() []byte {
 		}
 	}
 
-	return writer.Bytes()
+	if writer.Error() != nil {
+		return nil, writer.Error()
+	}
+
+	return writer.Bytes(), nil
+}
+
+func (lsr *LoginSuccessResponse) Unmarshal(reader *PacketReaderContext) error {
+	return nil
+}
+
+/*
+	0x03: Set Compression
+*/
+
+type SetCompressionRequest struct {
+	Threshold int
+}
+
+func (scr *SetCompressionRequest) Marshal(writer *PacketWriterContext) ([]byte, error) {
+	writer.AppendByte(0x03)
+	writer.AppendVarInt(scr.Threshold)
+
+	if writer.Error() != nil {
+		return nil, writer.Error()
+	}
+
+	return writer.Bytes(), nil
+}
+
+func (scr *SetCompressionRequest) Unmarshal(reader *PacketReaderContext) error {
+	return nil
 }
 
 /*
@@ -183,10 +278,85 @@ type DisconnectPacket struct {
 	Reason *ChatMessage
 }
 
-func (dp *DisconnectPacket) Bytes() []byte {
-	writer := NewPacketWriter()
+func (dp *DisconnectPacket) Marshal(writer *PacketWriterContext) ([]byte, error) {
 	writer.AppendByte(0x19)
 	writer.AppendString(dp.Reason.Encode())
 
-	return writer.Bytes()
+	if writer.Error() != nil {
+		return nil, writer.Error()
+	}
+
+	return writer.Bytes(), nil
+}
+
+func (dp *DisconnectPacket) Unmarshal(reader *PacketReaderContext) error {
+	return nil
+}
+
+/*
+	0x23: Play
+*/
+
+type PlayPacket struct {
+	EntityID            int32
+	IsHardcore          bool
+	GameMode            byte
+	PreviousGameMode    byte
+	WorldNames          []string
+	RegistryCodec       RegistryCodec
+	WorldType           string
+	WorldName           string
+	HashedSeed          int64
+	MaxPlayers          int
+	ViewDistance        int
+	SimulationDistance  int
+	ReducedDebugInfo    bool
+	EnableRespawnScreen bool
+	IsDebug             bool
+	IsFlat              bool
+	DeathDimensionName  string
+	DeathLocation       *Position
+}
+
+func (pp *PlayPacket) Marshal(writer *PacketWriterContext) ([]byte, error) {
+	writer.AppendByte(0x23)
+	writer.AppendInt32(pp.EntityID)
+	writer.AppendBool(pp.IsHardcore)
+	writer.AppendByte(pp.GameMode)
+	writer.AppendByte(pp.PreviousGameMode)
+
+	writer.AppendVarInt(len(pp.WorldNames))
+	for _, world := range pp.WorldNames {
+		writer.AppendString(world)
+	}
+
+	writer.AppendNBT(&pp.RegistryCodec)
+	writer.AppendString(pp.WorldType)
+	writer.AppendString(pp.WorldName)
+	writer.AppendInt64(pp.HashedSeed)
+	writer.AppendVarInt(pp.MaxPlayers)
+	writer.AppendVarInt(pp.ViewDistance)
+	writer.AppendVarInt(pp.SimulationDistance)
+	writer.AppendBool(pp.ReducedDebugInfo)
+	writer.AppendBool(pp.EnableRespawnScreen)
+	writer.AppendBool(pp.IsDebug)
+	writer.AppendBool(pp.IsFlat)
+
+	if pp.DeathDimensionName != "" && pp.DeathLocation != nil {
+		writer.AppendBool(true)
+		writer.AppendString(pp.DeathDimensionName)
+		writer.AppendPosition(pp.DeathLocation)
+	} else {
+		writer.AppendBool(false)
+	}
+
+	if writer.Error() != nil {
+		return nil, writer.Error()
+	}
+
+	return writer.Bytes(), nil
+}
+
+func (pp *PlayPacket) Unmarshal(reader *PacketReaderContext) error {
+	return nil
 }
