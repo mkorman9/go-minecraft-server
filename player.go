@@ -213,8 +213,8 @@ func (p *Player) OnEncryptionResponse(response *EncryptionResponse, err error) {
 
 	p.state = PlayerStatePlay
 	p.setupCompression()
-	p.sendLoginSuccessResponse()
 	p.setupEncryption()
+	p.sendLoginSuccessResponse()
 
 	p.OnPlayStart()
 }
