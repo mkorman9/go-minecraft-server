@@ -5,36 +5,31 @@ import (
 	"compress/zlib"
 	"encoding/binary"
 	"github.com/mkorman9/go-minecraft-server/nbt"
-	"io"
 	"reflect"
 )
 
 type PacketWriter struct {
-	compressionEnabled   bool
 	compressionThreshold int
 }
 
 type PacketWriterContext struct {
 	buffer               *bytes.Buffer
 	err                  error
-	compressionEnabled   bool
 	compressionThreshold int
 }
 
 func NewPacketWriter() *PacketWriter {
-	return &PacketWriter{compressionEnabled: false, compressionThreshold: -1}
+	return &PacketWriter{compressionThreshold: -1}
 }
 
 func (pw *PacketWriter) New() *PacketWriterContext {
 	return &PacketWriterContext{
 		buffer:               bytes.NewBuffer(make([]byte, 0)),
-		compressionEnabled:   pw.compressionEnabled,
 		compressionThreshold: pw.compressionThreshold,
 	}
 }
 
 func (pw *PacketWriter) EnableCompression(threshold int) {
-	pw.compressionEnabled = true
 	pw.compressionThreshold = threshold
 }
 
@@ -44,34 +39,31 @@ func (pwc *PacketWriterContext) Error() error {
 
 func (pwc *PacketWriterContext) Bytes() []byte {
 	data := pwc.buffer.Bytes()
-	finalWriter := &PacketWriterContext{buffer: bytes.NewBuffer(make([]byte, 0))}
+	dataSize := len(data)
+	finalWriter := &PacketWriterContext{buffer: bytes.NewBuffer(make([]byte, 0)), compressionThreshold: -1}
 
-	if pwc.compressionEnabled {
-		dataSize := len(data)
-
+	if pwc.compressionThreshold >= 0 {
 		if dataSize >= pwc.compressionThreshold {
-			zlibReader, _ := zlib.NewReader(pwc.buffer)
-			compressedData, _ := io.ReadAll(zlibReader)
-			compressedDataSize := len(compressedData)
+			var zlibBuffer bytes.Buffer
+
+			zlibWriter := zlib.NewWriter(&zlibBuffer)
+			_, _ = zlibWriter.Write(pwc.buffer.Bytes())
+			_ = zlibWriter.Close()
 
 			tmp := &PacketWriterContext{buffer: bytes.NewBuffer(make([]byte, 0))}
 			tmp.AppendVarInt(dataSize)
 			dataSizeSize := tmp.buffer.Len()
 
-			finalWriter.AppendVarInt(dataSizeSize + compressedDataSize)
+			finalWriter.AppendVarInt(dataSizeSize + zlibBuffer.Len())
 			finalWriter.AppendVarInt(dataSize)
-			finalWriter.buffer.Write(compressedData)
+			finalWriter.buffer.Write(zlibBuffer.Bytes())
 		} else {
-			tmp := &PacketWriterContext{buffer: bytes.NewBuffer(make([]byte, 0))}
-			tmp.AppendVarInt(dataSize)
-			dataSizeSize := tmp.buffer.Len()
-
-			finalWriter.AppendVarInt(dataSizeSize + dataSize)
-			finalWriter.AppendVarInt(dataSize)
+			finalWriter.AppendVarInt(dataSize + 1)
+			finalWriter.AppendVarInt(0)
 			finalWriter.buffer.Write(data)
 		}
 	} else {
-		finalWriter.AppendVarInt(len(data))
+		finalWriter.AppendVarInt(dataSize)
 		finalWriter.buffer.Write(data)
 	}
 

@@ -98,7 +98,7 @@ func (p *Player) OnHandshakeRequest(request *HandshakeRequest, err error) {
 
 	switch request.NextState {
 	case HandshakeStateStatus:
-		p.SendHandshakeResponse()
+		p.sendHandshakeResponse()
 	case HandshakeStateLogin:
 		p.state = PlayerStateLogin
 	}
@@ -115,12 +115,12 @@ func (p *Player) OnPing(request *PingRequest, err error) {
 
 	log.Println("received Ping")
 
-	p.SendPongResponse(request.Payload)
+	p.sendPongResponse(request.Payload)
 }
 
 func (p *Player) OnLoginStartRequest(request *LoginStartRequest, err error) {
 	if err != nil {
-		p.SendCancelLogin(NewChatMessage("Invalid Login Request"))
+		p.sendCancelLogin(NewChatMessage("Invalid Login Request"))
 		p.Disconnect()
 		return
 	}
@@ -134,7 +134,7 @@ func (p *Player) OnLoginStartRequest(request *LoginStartRequest, err error) {
 		publicKey, err := loadPublicKey(request.PublicKey)
 		if err != nil {
 			log.Printf("%v\n", err)
-			p.SendCancelLogin(NewChatMessage("Malformed Public Key"))
+			p.sendCancelLogin(NewChatMessage("Malformed Public Key"))
 			p.Disconnect()
 			return
 		}
@@ -144,10 +144,11 @@ func (p *Player) OnLoginStartRequest(request *LoginStartRequest, err error) {
 
 	if p.world.settings.OnlineMode {
 		p.state = PlayerStateEncryption
-		p.SendEncryptionRequest()
+		p.sendEncryptionRequest()
 	} else {
 		p.state = PlayerStatePlay
-		p.SendLoginSuccessResponse()
+		p.setupCompression()
+		p.sendLoginSuccessResponse()
 
 		p.OnPlayStart()
 	}
@@ -155,7 +156,7 @@ func (p *Player) OnLoginStartRequest(request *LoginStartRequest, err error) {
 
 func (p *Player) OnEncryptionResponse(response *EncryptionResponse, err error) {
 	if err != nil {
-		p.SendCancelLogin(NewChatMessage("Invalid Login Request"))
+		p.sendCancelLogin(NewChatMessage("Invalid Login Request"))
 		p.Disconnect()
 		return
 	}
@@ -165,7 +166,7 @@ func (p *Player) OnEncryptionResponse(response *EncryptionResponse, err error) {
 	sharedSecret, err := p.world.DecryptServerMessage(response.SharedSecret)
 	if err != nil {
 		log.Printf("%v\n", err)
-		p.SendCancelLogin(NewChatMessage("Malformed Shared Secret"))
+		p.sendCancelLogin(NewChatMessage("Malformed Shared Secret"))
 		p.Disconnect()
 		return
 	}
@@ -177,14 +178,14 @@ func (p *Player) OnEncryptionResponse(response *EncryptionResponse, err error) {
 		verifyToken, err := p.world.DecryptServerMessage(response.VerifyToken)
 		if err != nil {
 			log.Printf("%v\n", err)
-			p.SendCancelLogin(NewChatMessage("Malformed Verify Token"))
+			p.sendCancelLogin(NewChatMessage("Malformed Verify Token"))
 			p.Disconnect()
 			return
 		}
 
 		if verifyToken != p.verifyToken {
 			log.Printf("token mismatch\n")
-			p.SendCancelLogin(NewChatMessage("Token mismatch"))
+			p.sendCancelLogin(NewChatMessage("Token mismatch"))
 			p.Disconnect()
 			return
 		}
@@ -197,7 +198,7 @@ func (p *Player) OnEncryptionResponse(response *EncryptionResponse, err error) {
 		)
 		if err != nil {
 			log.Printf("%v\n", err)
-			p.SendCancelLogin(NewChatMessage("Signature verification error"))
+			p.sendCancelLogin(NewChatMessage("Signature verification error"))
 			p.Disconnect()
 			return
 		}
@@ -211,17 +212,37 @@ func (p *Player) OnEncryptionResponse(response *EncryptionResponse, err error) {
 	//)
 
 	p.state = PlayerStatePlay
-	p.SendLoginSuccessResponse()
+	p.setupCompression()
+	p.sendLoginSuccessResponse()
 	p.setupEncryption()
 
 	p.OnPlayStart()
 }
 
 func (p *Player) OnPlayStart() {
-	p.SendPlayPacket()
+	p.sendPlayPacket()
 }
 
-func (p *Player) SendHandshakeResponse() {
+func (p *Player) setupEncryption() {
+	cipherStream, err := NewCipherStream(p.sharedSecret)
+	if err != nil {
+		log.Printf("%v\n", err)
+		p.Disconnect()
+		return
+	}
+
+	p.reader = cipherStream.WrapReader(p.reader)
+	p.writer = cipherStream.WrapWriter(p.writer)
+}
+
+func (p *Player) setupCompression() {
+	if p.world.settings.CompressionThreshold >= 0 {
+		p.sendSetCompressionRequest()
+		p.packetWriter.EnableCompression(p.world.settings.CompressionThreshold)
+	}
+}
+
+func (p *Player) sendHandshakeResponse() {
 	serverStatus := p.world.GetServerStatus()
 	serverStatusJSON, err := serverStatus.Encode()
 	if err != nil {
@@ -236,7 +257,7 @@ func (p *Player) SendHandshakeResponse() {
 	p.writePacket(response)
 }
 
-func (p *Player) SendPongResponse(payload int64) {
+func (p *Player) sendPongResponse(payload int64) {
 	packet := &PongResponse{
 		Payload: payload,
 	}
@@ -244,7 +265,7 @@ func (p *Player) SendPongResponse(payload int64) {
 	p.writePacket(packet)
 }
 
-func (p *Player) SendCancelLogin(reason *ChatMessage) {
+func (p *Player) sendCancelLogin(reason *ChatMessage) {
 	packet := &CancelLoginPacket{
 		Reason: reason,
 	}
@@ -252,7 +273,7 @@ func (p *Player) SendCancelLogin(reason *ChatMessage) {
 	p.writePacket(packet)
 }
 
-func (p *Player) SendEncryptionRequest() {
+func (p *Player) sendEncryptionRequest() {
 	serverKey := p.world.serverKey.publicASN1
 
 	response := &EncryptionRequest{
@@ -264,7 +285,7 @@ func (p *Player) SendEncryptionRequest() {
 	p.writePacket(response)
 }
 
-func (p *Player) SendSetCompressionRequest() {
+func (p *Player) sendSetCompressionRequest() {
 	request := &SetCompressionRequest{
 		Threshold: p.world.settings.CompressionThreshold,
 	}
@@ -272,7 +293,7 @@ func (p *Player) SendSetCompressionRequest() {
 	p.writePacket(request)
 }
 
-func (p *Player) SendLoginSuccessResponse() {
+func (p *Player) sendLoginSuccessResponse() {
 	response := &LoginSuccessResponse{
 		UUID:     p.uuid,
 		Username: p.name,
@@ -281,7 +302,7 @@ func (p *Player) SendLoginSuccessResponse() {
 	p.writePacket(response)
 }
 
-func (p *Player) SendDisconnect(reason *ChatMessage) {
+func (p *Player) sendDisconnect(reason *ChatMessage) {
 	response := &DisconnectPacket{
 		Reason: reason,
 	}
@@ -290,7 +311,7 @@ func (p *Player) SendDisconnect(reason *ChatMessage) {
 	p.Disconnect()
 }
 
-func (p *Player) SendPlayPacket() {
+func (p *Player) sendPlayPacket() {
 	packet := &PlayPacket{
 		EntityID:            0,
 		IsHardcore:          false,
@@ -311,22 +332,6 @@ func (p *Player) SendPlayPacket() {
 	}
 
 	p.writePacket(packet)
-}
-
-func (p *Player) setupEncryption() {
-	cipherStream, err := NewCipherStream(p.sharedSecret)
-	if err != nil {
-		log.Printf("%v\n", err)
-		p.Disconnect()
-		return
-	}
-
-	p.reader = cipherStream.WrapReader(p.reader)
-	p.writer = cipherStream.WrapWriter(p.writer)
-}
-
-func (p *Player) setupCompression(threshold int) {
-	p.packetWriter.EnableCompression(threshold)
 }
 
 func (p *Player) writePacket(packet Packet) {

@@ -12,35 +12,30 @@ type RegistryValue[E any] struct {
 }
 
 type RegistryCodec struct {
-	Type  string             `nbt:"type"`
-	Name  string             `nbt:"name"`
-	Value RegistryCodecValue `nbt:"value"`
-}
-
-type RegistryCodecValue struct {
 	DimensionType Registry[Dimension]     `nbt:"minecraft:dimension_type"`
 	WorldGenBiome Registry[WorldGenBiome] `nbt:"minecraft:worldgen/biome"`
-	//ChatType      Registry[nbt.RawMessage] `nbt:"minecraft:chat_type"`
+	ChatType      Registry[ChatType]      `nbt:"minecraft:chat_type"`
 }
 
 type Dimension struct {
-	HasSkylight        bool    `nbt:"has_skylight"`
-	HasCeiling         bool    `nbt:"has_ceiling"`
-	Ultrawarm          bool    `nbt:"ultrawarm"`
-	Natural            bool    `nbt:"natural"`
-	CoordinateScale    float64 `nbt:"coordinate_scale"`
-	BedWorks           bool    `nbt:"bed_works"`
-	RespawnAnchorWorks byte    `nbt:"respawn_anchor_works"`
-	MinY               int32   `nbt:"min_y"`
-	Height             int32   `nbt:"height"`
-	LogicalHeight      int32   `nbt:"logical_height"`
-	InfiniteBurn       string  `nbt:"infiniburn"`
-	Effects            string  `nbt:"effects"`
-	AmbientLight       float64 `nbt:"ambient_light"`
-	PiglinSafe         byte    `nbt:"piglin_safe"`
-	HasRaids           byte    `nbt:"has_raids"`
-	//MonsterSpawnLightLevel      nbt.RawMessage `nbt:"monster_spawn_light_level"` // Tag_Int or {type:"minecraft:uniform", value:{min_inclusive: Tag_Int, max_inclusive: Tag_Int}}
-	//MonsterSpawnBlockLightLimit int            `nbt:"monster_spawn_block_light_limit"`
+	HasSkylight                 bool    `nbt:"has_skylight"`
+	HasCeiling                  bool    `nbt:"has_ceiling"`
+	Ultrawarm                   bool    `nbt:"ultrawarm"`
+	Natural                     bool    `nbt:"natural"`
+	CoordinateScale             float64 `nbt:"coordinate_scale"`
+	BedWorks                    bool    `nbt:"bed_works"`
+	RespawnAnchorWorks          byte    `nbt:"respawn_anchor_works"`
+	MinY                        int32   `nbt:"min_y"`
+	Height                      int32   `nbt:"height"`
+	LogicalHeight               int32   `nbt:"logical_height"`
+	InfiniteBurn                string  `nbt:"infiniburn"`
+	Effects                     string  `nbt:"effects"`
+	AmbientLight                float64 `nbt:"ambient_light"`
+	PiglinSafe                  byte    `nbt:"piglin_safe"`
+	HasRaids                    byte    `nbt:"has_raids"`
+	MonsterSpawnLightLevel      int32   `nbt:"monster_spawn_light_level"`
+	MonsterSpawnBlockLightLimit int32   `nbt:"monster_spawn_block_light_limit"`
+	FixedTime                   int64   `nbt:"fixed_time,omitempty"`
 }
 
 type WorldGenBiome struct {
@@ -65,58 +60,99 @@ type WorldGenBiomeEffects struct {
 	// ...
 }
 
+type ChatType struct {
+	Chat      ChatProperties `nbt:"chat"`
+	Narration ChatNarration  `nbt:"narration"`
+}
+
+type ChatProperties struct {
+	Decoration ChatDecoration `nbt:"decoration"`
+}
+
+type ChatNarration struct {
+	Decoration ChatDecoration `nbt:"decoration"`
+	Priority   string         `nbt:"priority"`
+}
+
+type ChatDecoration struct {
+	Parameters     []string  `nbt:"parameters"`
+	TranslationKey string    `nbt:"translation_key"`
+	Style          ChatStyle `nbt:"style"`
+}
+
+type ChatStyle struct {
+}
+
 func DefaultRegistryCodec() RegistryCodec {
 	return RegistryCodec{
-		Type: "compound",
-		Name: "",
-		Value: RegistryCodecValue{
-			DimensionType: Registry[Dimension]{
-				Type: "minecraft:dimension_type",
-				Value: []RegistryValue[Dimension]{
-					{
-						Name: "minecraft:overworld",
-						ID:   0,
-						Element: Dimension{
-							HasSkylight:        true,
-							HasCeiling:         false,
-							Ultrawarm:          false,
-							Natural:            true,
-							CoordinateScale:    1,
-							BedWorks:           true,
-							RespawnAnchorWorks: 0,
-							MinY:               -64,
-							Height:             384,
-							LogicalHeight:      384,
-							InfiniteBurn:       "minecraft:infiniburn_overworld",
-							Effects:            "minecraft:overworld",
-							AmbientLight:       0,
-							PiglinSafe:         0,
-							HasRaids:           1,
-							//MonsterSpawnLightLevel:      nbt.RawMessage{Type: nbt.TagInt, Data: []byte{0, 0, 0, 8}},
-							//MonsterSpawnBlockLightLimit: 8,
+		DimensionType: Registry[Dimension]{
+			Type: "minecraft:dimension_type",
+			Value: []RegistryValue[Dimension]{
+				{
+					Name: "minecraft:overworld",
+					ID:   0,
+					Element: Dimension{
+						HasSkylight:                 true,
+						HasCeiling:                  false,
+						Ultrawarm:                   false,
+						Natural:                     true,
+						CoordinateScale:             1,
+						BedWorks:                    true,
+						RespawnAnchorWorks:          0,
+						MinY:                        -64,
+						Height:                      384,
+						LogicalHeight:               384,
+						InfiniteBurn:                "minecraft:infiniburn_overworld",
+						Effects:                     "minecraft:overworld",
+						AmbientLight:                0,
+						PiglinSafe:                  0,
+						HasRaids:                    1,
+						MonsterSpawnLightLevel:      8,
+						MonsterSpawnBlockLightLimit: 0,
+					},
+				},
+			},
+		},
+		WorldGenBiome: Registry[WorldGenBiome]{
+			Type: "minecraft:worldgen/biome",
+			Value: []RegistryValue[WorldGenBiome]{
+				{
+					Name: "minecraft:badlands",
+					ID:   0,
+					Element: WorldGenBiome{
+						Precipitation: "none",
+						Temperature:   2,
+						Downfall:      0,
+						Category:      "mesa",
+						Effects: WorldGenBiomeEffects{
+							SkyColor:      7254527,
+							WaterFogColor: 329011,
+							FogColor:      12638463,
+							WaterColor:    4159204,
+							FoliageColor:  10387789,
+							GrassColor:    9470285,
 						},
 					},
 				},
 			},
-			WorldGenBiome: Registry[WorldGenBiome]{
-				Type: "minecraft:worldgen/biome",
-				Value: []RegistryValue[WorldGenBiome]{
-					{
-						Name: "minecraft:badlands",
-						ID:   0,
-						Element: WorldGenBiome{
-							Precipitation: "none",
-							Temperature:   2,
-							Downfall:      0,
-							Category:      "mesa",
-							Effects: WorldGenBiomeEffects{
-								SkyColor:      7254527,
-								WaterFogColor: 329011,
-								FogColor:      12638463,
-								WaterColor:    4159204,
-								FoliageColor:  10387789,
-								GrassColor:    9470285,
+		},
+		ChatType: Registry[ChatType]{
+			Type: "minecraft:chat_type",
+			Value: []RegistryValue[ChatType]{
+				{
+					Name: "minecraft:chat",
+					ID:   0,
+					Element: ChatType{
+						Chat: ChatProperties{
+							Decoration: ChatDecoration{
+								Parameters: []string{"sender", "content"},
 							},
+						},
+						Narration: ChatNarration{
+							Decoration: ChatDecoration{
+								Parameters: []string{"sender", "content"},
+							},
+							Priority: "chat",
 						},
 					},
 				},
