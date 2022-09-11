@@ -204,15 +204,24 @@ func (p *Player) OnEncryptionResponse(response *EncryptionResponse, err error) {
 		}
 	}
 
-	// Verify user info here
-	//fmt.Printf(
-	//	"https://sessionserver.mojang.com/session/minecraft/hasJoined?username=%s&serverId=%s\n",
-	//	p.name,
-	//	p.serverHash,
-	//)
+	p.setupEncryption()
+
+	//playerVerification, err := MojangVerifyPlayer(p.name, p.serverHash)
+	//if err != nil {
+	//	log.Printf("%v\n", err)
+	//	p.sendCancelLogin(NewChatMessage("Username verification error"))
+	//	p.Disconnect()
+	//	return
+	//}
+	//
+	//if !playerVerification.Verified {
+	//	log.Println("username claim not valid")
+	//	p.sendCancelLogin(NewChatMessage("Username cannot be verified"))
+	//	p.Disconnect()
+	//	return
+	//}
 
 	p.state = PlayerStatePlay
-	p.setupEncryption()
 	p.setupCompression()
 	p.sendLoginSuccessResponse()
 
