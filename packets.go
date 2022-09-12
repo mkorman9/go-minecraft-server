@@ -364,7 +364,7 @@ type SettingsPacket struct {
 	EnableServerListing bool
 }
 
-func (sp *SettingsPacket) Marshal(ctx *PacketWriterContext) ([]byte, error) {
+func (sp *SettingsPacket) Marshal(writer *PacketWriterContext) ([]byte, error) {
 	return nil, nil
 }
 
@@ -390,7 +390,7 @@ type CustomPayloadPacket struct {
 	Data    []byte
 }
 
-func (cpp *CustomPayloadPacket) Marshal(ctx *PacketWriterContext) ([]byte, error) {
+func (cpp *CustomPayloadPacket) Marshal(writer *PacketWriterContext) ([]byte, error) {
 	return nil, nil
 }
 
@@ -412,7 +412,7 @@ type PositionPacket struct {
 	OnGround bool
 }
 
-func (pp *PositionPacket) Marshal(ctx *PacketWriterContext) ([]byte, error) {
+func (pp *PositionPacket) Marshal(writer *PacketWriterContext) ([]byte, error) {
 	return nil, nil
 }
 
@@ -438,7 +438,7 @@ type PositionLookPacket struct {
 	OnGround bool
 }
 
-func (plp *PositionLookPacket) Marshal(ctx *PacketWriterContext) ([]byte, error) {
+func (plp *PositionLookPacket) Marshal(writer *PacketWriterContext) ([]byte, error) {
 	return nil, nil
 }
 
@@ -461,12 +461,37 @@ type ArmAnimationPacket struct {
 	Hand int
 }
 
-func (aap *ArmAnimationPacket) Marshal(ctx *PacketWriterContext) ([]byte, error) {
+func (aap *ArmAnimationPacket) Marshal(writer *PacketWriterContext) ([]byte, error) {
 	return nil, nil
 }
 
 func (aap *ArmAnimationPacket) Unmarshal(reader *PacketReaderContext) error {
 	aap.Hand = reader.FetchVarInt()
 
+	return reader.Error()
+}
+
+/*
+	0x5f: System Chat
+*/
+
+type SystemChatPacket struct {
+	Content *ChatMessage
+	Type    SystemChatMessageType
+}
+
+func (scp *SystemChatPacket) Marshal(writer *PacketWriterContext) ([]byte, error) {
+	writer.AppendByte(0x5f)
+	writer.AppendString(scp.Content.Encode())
+	writer.AppendVarInt(scp.Type)
+
+	if writer.Error() != nil {
+		return nil, writer.Error()
+	}
+
+	return writer.Bytes(), nil
+}
+
+func (scp *SystemChatPacket) Unmarshal(reader *PacketReaderContext) error {
 	return reader.Error()
 }

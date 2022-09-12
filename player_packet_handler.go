@@ -432,10 +432,15 @@ func (pph *PlayerPacketHandler) Cancel(reason *ChatMessage) {
 }
 
 func (pph *PlayerPacketHandler) OnJoin() error {
+	err := pph.sendPlayPacket()
+	if err != nil {
+		return err
+	}
+
 	pph.state = PlayerStatePlay
 	pph.player.OnJoin()
 
-	return pph.sendPlayPacket()
+	return nil
 }
 
 func (pph *PlayerPacketHandler) setupEncryption() error {
@@ -550,6 +555,15 @@ func (pph *PlayerPacketHandler) sendPlayPacket() error {
 func (pph *PlayerPacketHandler) sendDisconnect(reason *ChatMessage) error {
 	response := &DisconnectPacket{
 		Reason: reason,
+	}
+
+	return pph.writePacket(response)
+}
+
+func (pph *PlayerPacketHandler) sendSystemChatMessage(message *ChatMessage) error {
+	response := &SystemChatPacket{
+		Content: message,
+		Type:    SystemChatMessageTypeChat,
 	}
 
 	return pph.writePacket(response)
