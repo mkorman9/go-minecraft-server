@@ -65,3 +65,7 @@ func (p *Player) OnGroundUpdate(onGround bool) {
 
 func (p *Player) OnPluginChannel(channel string, data []byte) {
 }
+
+func (p *Player) OnArmAnimation(hand int) {
+
+}

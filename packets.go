@@ -452,3 +452,21 @@ func (plp *PositionLookPacket) Unmarshal(reader *PacketReaderContext) error {
 
 	return reader.Error()
 }
+
+/*
+	0x2e: Arm Animation (left click)
+*/
+
+type ArmAnimationPacket struct {
+	Hand int
+}
+
+func (aap *ArmAnimationPacket) Marshal(ctx *PacketWriterContext) ([]byte, error) {
+	return nil, nil
+}
+
+func (aap *ArmAnimationPacket) Unmarshal(reader *PacketReaderContext) error {
+	aap.Hand = reader.FetchVarInt()
+
+	return reader.Error()
+}
