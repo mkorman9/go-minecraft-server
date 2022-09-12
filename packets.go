@@ -495,3 +495,70 @@ func (scp *SystemChatPacket) Marshal(writer *PacketWriterContext) ([]byte, error
 func (scp *SystemChatPacket) Unmarshal(reader *PacketReaderContext) error {
 	return reader.Error()
 }
+
+/*
+	0x04: Chat Message
+*/
+
+type ChatMessagePacket struct {
+	Message       string
+	Timestamp     int64
+	Salt          int64
+	Signature     []byte
+	SignedPreview bool
+}
+
+func (cmp *ChatMessagePacket) Marshal(writer *PacketWriterContext) ([]byte, error) {
+	return nil, nil
+}
+
+func (cmp *ChatMessagePacket) Unmarshal(reader *PacketReaderContext) error {
+	cmp.Message = reader.FetchString()
+	cmp.Timestamp = reader.FetchInt64()
+	cmp.Salt = reader.FetchInt64()
+	cmp.Signature = reader.FetchByteArray()
+	cmp.SignedPreview = reader.FetchBool()
+
+	return reader.Error()
+}
+
+/*
+	0x03: Chat Command
+*/
+
+type ChatCommandPacket struct {
+	Message       string
+	Timestamp     int64
+	Salt          int64
+	Arguments     []ChatCommandPacketArgument
+	SignedPreview bool
+}
+
+type ChatCommandPacketArgument struct {
+	ArgumentName string
+	Signature    []byte
+}
+
+func (ccp *ChatCommandPacket) Marshal(writer *PacketWriterContext) ([]byte, error) {
+	return nil, nil
+}
+
+func (ccp *ChatCommandPacket) Unmarshal(reader *PacketReaderContext) error {
+	ccp.Message = reader.FetchString()
+	ccp.Timestamp = reader.FetchInt64()
+	ccp.Salt = reader.FetchInt64()
+
+	argumentsCount := reader.FetchVarInt()
+	for i := 0; i < argumentsCount; i++ {
+		argument := ChatCommandPacketArgument{
+			ArgumentName: reader.FetchString(),
+			Signature:    reader.FetchByteArray(),
+		}
+
+		ccp.Arguments = append(ccp.Arguments, argument)
+	}
+
+	ccp.SignedPreview = reader.FetchBool()
+
+	return reader.Error()
+}

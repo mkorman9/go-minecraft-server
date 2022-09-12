@@ -178,6 +178,10 @@ func (pph *PlayerPacketHandler) OnPlayPacket(packetId int, packetReader *PacketR
 		return pph.OnPositionLook(packetReader)
 	case 0x2e:
 		return pph.OnArmAnimation(packetReader)
+	case 0x03:
+		return pph.OnChatCommand(packetReader)
+	case 0x04:
+		return pph.OnChatMessage(packetReader)
 	default:
 		log.Printf("unrecognized packet id: 0x%x in play state\n", packetId)
 		return nil
@@ -400,6 +404,34 @@ func (pph *PlayerPacketHandler) OnArmAnimation(packetReader *PacketReaderContext
 	}
 
 	pph.player.OnArmAnimation(packet.Hand)
+
+	return nil
+}
+
+func (pph *PlayerPacketHandler) OnChatCommand(packetReader *PacketReaderContext) error {
+	log.Println("received ChatCommand")
+
+	var packet ChatCommandPacket
+	err := packet.Unmarshal(packetReader)
+	if err != nil {
+		return err
+	}
+
+	// TODO
+
+	return nil
+}
+
+func (pph *PlayerPacketHandler) OnChatMessage(packetReader *PacketReaderContext) error {
+	log.Println("received ChatMessage")
+
+	var packet ChatMessagePacket
+	err := packet.Unmarshal(packetReader)
+	if err != nil {
+		return err
+	}
+
+	// TODO
 
 	return nil
 }
