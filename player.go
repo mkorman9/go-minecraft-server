@@ -52,8 +52,17 @@ func (p *Player) SendSystemChatMessage(message *ChatMessage) {
 	}
 }
 
+func (p *Player) SetPosition(x, y, z float64) {
+	p.X = x
+	p.Y = y
+	p.Z = z
+
+	_ = p.packetHandler.SynchronizePosition(x, y, z)
+}
+
 func (p *Player) OnJoin() {
 	p.world.PlayerList().RegisterPlayer(p)
+	p.SetPosition(1000, 64, 1000)
 }
 
 func (p *Player) OnClientSettings(clientSettings *PlayerClientSettings) {

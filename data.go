@@ -7,10 +7,13 @@ import (
 
 type Data struct {
 	DimensionCodec *DimensionCodec
+	SpawnPosition  *Position
 }
 
 func LoadData() (*Data, error) {
-	var data Data
+	data := Data{
+		SpawnPosition: NewPosition(0, 64, 0),
+	}
 
 	dimmensionCodecData, err := os.ReadFile("./data/1_19/dimension_codec.json")
 	if err != nil {

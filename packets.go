@@ -562,3 +562,65 @@ func (ccp *ChatCommandPacket) Unmarshal(reader *PacketReaderContext) error {
 
 	return reader.Error()
 }
+
+/*
+	0x4a: Spawn Position
+*/
+
+type SpawnPositionPacket struct {
+	Location *Position
+	Angle    float32
+}
+
+func (spp *SpawnPositionPacket) Marshal(writer *PacketWriterContext) ([]byte, error) {
+	writer.AppendByte(0x4a)
+	writer.AppendPosition(spp.Location)
+	writer.AppendFloat32(spp.Angle)
+
+	if writer.Error() != nil {
+		return nil, writer.Error()
+	}
+
+	return writer.Bytes(), nil
+}
+
+func (spp *SpawnPositionPacket) Unmarshal(reader *PacketReaderContext) error {
+	return nil
+}
+
+/*
+	0x36: Update Position
+*/
+
+type UpdatePositionPacket struct {
+	X               float64
+	Y               float64
+	Z               float64
+	Yaw             float32
+	Pitch           float32
+	Flags           byte
+	TeleportID      int
+	DismountVehicle bool
+}
+
+func (upp *UpdatePositionPacket) Marshal(writer *PacketWriterContext) ([]byte, error) {
+	writer.AppendByte(0x36)
+	writer.AppendFloat64(upp.X)
+	writer.AppendFloat64(upp.Y)
+	writer.AppendFloat64(upp.Z)
+	writer.AppendFloat32(upp.Yaw)
+	writer.AppendFloat32(upp.Pitch)
+	writer.AppendByte(upp.Flags)
+	writer.AppendVarInt(upp.TeleportID)
+	writer.AppendBool(upp.DismountVehicle)
+
+	if writer.Error() != nil {
+		return nil, writer.Error()
+	}
+
+	return writer.Bytes(), nil
+}
+
+func (upp *UpdatePositionPacket) Unmarshal(reader *PacketReaderContext) error {
+	return nil
+}

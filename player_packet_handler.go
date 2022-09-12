@@ -466,6 +466,11 @@ func (pph *PlayerPacketHandler) OnJoin() error {
 		return err
 	}
 
+	err = pph.sendSpawnPosition()
+	if err != nil {
+		return err
+	}
+
 	pph.state = PlayerStatePlay
 	pph.player.OnJoin()
 
@@ -474,6 +479,10 @@ func (pph *PlayerPacketHandler) OnJoin() error {
 
 func (pph *PlayerPacketHandler) SendSystemChatMessage(message *ChatMessage) error {
 	return pph.sendSystemChatMessage(message)
+}
+
+func (pph *PlayerPacketHandler) SynchronizePosition(x float64, y float64, z float64) error {
+	return pph.sendPositionUpdate(x, y, z)
 }
 
 func (pph *PlayerPacketHandler) setupEncryption() error {
@@ -586,20 +595,44 @@ func (pph *PlayerPacketHandler) sendPlayPacket() error {
 }
 
 func (pph *PlayerPacketHandler) sendDisconnect(reason *ChatMessage) error {
-	response := &DisconnectPacket{
+	packet := &DisconnectPacket{
 		Reason: reason,
 	}
 
-	return pph.writePacket(response)
+	return pph.writePacket(packet)
 }
 
 func (pph *PlayerPacketHandler) sendSystemChatMessage(message *ChatMessage) error {
-	response := &SystemChatPacket{
+	packet := &SystemChatPacket{
 		Content: message,
 		Type:    SystemChatMessageTypeChat,
 	}
 
-	return pph.writePacket(response)
+	return pph.writePacket(packet)
+}
+
+func (pph *PlayerPacketHandler) sendSpawnPosition() error {
+	packet := &SpawnPositionPacket{
+		Location: pph.world.Data().SpawnPosition,
+		Angle:    0,
+	}
+
+	return pph.writePacket(packet)
+}
+
+func (pph *PlayerPacketHandler) sendPositionUpdate(x float64, y float64, z float64) error {
+	packet := &UpdatePositionPacket{
+		X:               x,
+		Y:               y,
+		Z:               z,
+		Yaw:             pph.player.Yaw,
+		Pitch:           pph.player.Pitch,
+		Flags:           0,
+		TeleportID:      0,
+		DismountVehicle: false,
+	}
+
+	return pph.writePacket(packet)
 }
 
 func (pph *PlayerPacketHandler) writePacket(packet Packet) error {
