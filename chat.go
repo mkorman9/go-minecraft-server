@@ -4,12 +4,12 @@ import "encoding/json"
 
 type ChatMessage struct {
 	Text          string        `json:"text"`
-	Bold          bool          `json:"bold"`
-	Italic        bool          `json:"italic"`
-	Underlined    bool          `json:"underlined"`
-	Strikethrough bool          `json:"strikethrough"`
-	Obfuscated    bool          `json:"obfuscated"`
-	Font          string        `json:"font"`
+	Bold          bool          `json:"bold,omitempty"`
+	Italic        bool          `json:"italic,omitempty"`
+	Underlined    bool          `json:"underlined,omitempty"`
+	Strikethrough bool          `json:"strikethrough,omitempty"`
+	Obfuscated    bool          `json:"obfuscated,omitempty"`
+	Font          string        `json:"font,omitempty"`
 	Extra         []ChatMessage `json:"extra,omitempty"`
 }
 

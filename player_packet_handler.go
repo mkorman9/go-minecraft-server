@@ -26,6 +26,22 @@ const (
 	HandshakeTypeLogin  = 2
 )
 
+type PacketHandlingError struct {
+	wrapped error
+	reason  *ChatMessage
+}
+
+func NewPacketHandlingError(err error, reason *ChatMessage) *PacketHandlingError {
+	return &PacketHandlingError{
+		wrapped: err,
+		reason:  reason,
+	}
+}
+
+func (phe *PacketHandlingError) Error() string {
+	return phe.wrapped.Error()
+}
+
 type PlayerPacketHandler struct {
 	player       *Player
 	world        *World
@@ -96,6 +112,10 @@ func (pph *PlayerPacketHandler) ReadLoop() {
 
 		err = pph.HandlePacket(packetData)
 		if err != nil {
+			if handlingError, ok := err.(*PacketHandlingError); ok {
+				pph.Cancel(handlingError.reason)
+			}
+
 			log.Printf("%v\n", err)
 			return
 		}
@@ -215,8 +235,7 @@ func (pph *PlayerPacketHandler) OnLoginStartRequest(packetReader *PacketReaderCo
 		publicKey, err := loadPublicKey(request.PublicKey)
 		if err != nil {
 			log.Printf("%v\n", err)
-			pph.Cancel(NewChatMessage("Malformed Public Key"))
-			return nil
+			return NewPacketHandlingError(err, NewChatMessage("Malformed Public Key"))
 		}
 
 		pph.playerPublicKey = publicKey
@@ -252,8 +271,7 @@ func (pph *PlayerPacketHandler) OnEncryptionResponse(packetReader *PacketReaderC
 	sharedSecret, err := pph.world.Server().DecryptMessage(response.SharedSecret)
 	if err != nil {
 		log.Printf("%v\n", err)
-		pph.Cancel(NewChatMessage("Malformed Shared Secret"))
-		return nil
+		return NewPacketHandlingError(err, NewChatMessage("Malformed Shared Secret"))
 	}
 
 	pph.sharedSecret = sharedSecret
@@ -263,14 +281,12 @@ func (pph *PlayerPacketHandler) OnEncryptionResponse(packetReader *PacketReaderC
 		verifyToken, err := pph.world.Server().DecryptMessage(response.VerifyToken)
 		if err != nil {
 			log.Printf("%v\n", err)
-			pph.Cancel(NewChatMessage("Malformed Verify Token"))
-			return nil
+			return NewPacketHandlingError(err, NewChatMessage("Malformed Verify Token"))
 		}
 
 		if string(verifyToken) != pph.verifyToken {
 			log.Printf("token mismatch\n")
-			pph.Cancel(NewChatMessage("Token mismatch"))
-			return nil
+			return NewPacketHandlingError(err, NewChatMessage("Token mismatch"))
 		}
 	} else {
 		err = verifyRsaSignature(
@@ -281,12 +297,14 @@ func (pph *PlayerPacketHandler) OnEncryptionResponse(packetReader *PacketReaderC
 		)
 		if err != nil {
 			log.Printf("%v\n", err)
-			pph.Cancel(NewChatMessage("Signature verification error"))
-			return nil
+			return NewPacketHandlingError(err, NewChatMessage("Signature verification error"))
 		}
 	}
 
-	pph.setupEncryption()
+	err = pph.setupEncryption()
+	if err != nil {
+		return err
+	}
 
 	err = pph.setupCompression()
 	if err != nil {
@@ -336,16 +354,17 @@ func (pph *PlayerPacketHandler) OnJoin() error {
 	return pph.sendPlayPacket()
 }
 
-func (pph *PlayerPacketHandler) setupEncryption() {
+func (pph *PlayerPacketHandler) setupEncryption() error {
 	cipherStream, err := NewCipherStream(pph.sharedSecret)
 	if err != nil {
 		log.Printf("%v\n", err)
-		pph.Cancel(nil)
-		return
+		return err
 	}
 
 	pph.reader = cipherStream.WrapReader(pph.reader)
 	pph.writer = cipherStream.WrapWriter(pph.writer)
+
+	return nil
 }
 
 func (pph *PlayerPacketHandler) setupCompression() error {
