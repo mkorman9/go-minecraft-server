@@ -169,6 +169,8 @@ func (pph *PlayerPacketHandler) OnEncryptionPacket(packetId int, packetReader *P
 
 func (pph *PlayerPacketHandler) OnPlayPacket(packetId int, packetReader *PacketReaderContext) error {
 	switch packetId {
+	case 0x00:
+		return pph.OnTeleportConfirm(packetReader)
 	case 0x07:
 		return pph.OnSettings(packetReader)
 	case 0x0c:
@@ -326,6 +328,20 @@ func (pph *PlayerPacketHandler) OnEncryptionResponse(packetReader *PacketReaderC
 	}
 
 	return pph.OnJoin()
+}
+
+func (pph *PlayerPacketHandler) OnTeleportConfirm(packetReader *PacketReaderContext) error {
+	log.Println("received TeleportConfirm")
+
+	var packet TeleportConfirmPacket
+	err := packet.Unmarshal(packetReader)
+	if err != nil {
+		return err
+	}
+
+	// nop
+
+	return nil
 }
 
 func (pph *PlayerPacketHandler) OnSettings(packetReader *PacketReaderContext) error {

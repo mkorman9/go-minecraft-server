@@ -62,7 +62,6 @@ func (p *Player) SetPosition(x, y, z float64) {
 
 func (p *Player) OnJoin() {
 	p.world.PlayerList().RegisterPlayer(p)
-	p.SetPosition(1000, 64, 1000)
 }
 
 func (p *Player) OnClientSettings(clientSettings *PlayerClientSettings) {

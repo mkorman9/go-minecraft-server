@@ -624,3 +624,21 @@ func (upp *UpdatePositionPacket) Marshal(writer *PacketWriterContext) ([]byte, e
 func (upp *UpdatePositionPacket) Unmarshal(reader *PacketReaderContext) error {
 	return nil
 }
+
+/*
+	0x00: Teleport confirm
+*/
+
+type TeleportConfirmPacket struct {
+	TeleportID int
+}
+
+func (tcp *TeleportConfirmPacket) Marshal(writer *PacketWriterContext) ([]byte, error) {
+	return nil, nil
+}
+
+func (tcp *TeleportConfirmPacket) Unmarshal(reader *PacketReaderContext) error {
+	tcp.TeleportID = reader.FetchVarInt()
+
+	return reader.Error()
+}
