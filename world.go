@@ -9,6 +9,7 @@ type World struct {
 	data           *Data
 	server         *Server
 	playerList     *PlayerList
+	backgroundJob  *BackgroundJob
 	serverListener net.Listener
 }
 
@@ -23,12 +24,17 @@ func NewWorld(settings *Settings) (*World, error) {
 		return nil, err
 	}
 
-	return &World{
+	world := &World{
 		data:       data,
 		server:     server,
 		settings:   settings,
 		playerList: NewPlayerList(),
-	}, nil
+	}
+
+	world.backgroundJob = NewBackgroundJob(world)
+	world.backgroundJob.Start()
+
+	return world, nil
 }
 
 func (w *World) Settings() *Settings {

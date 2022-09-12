@@ -43,3 +43,12 @@ func (pl *PlayerList) Len() int {
 
 	return len(pl.list)
 }
+
+func (pl *PlayerList) All(handler func(*Player)) {
+	pl.m.RLock()
+	defer pl.m.RUnlock()
+
+	for _, player := range pl.list {
+		handler(player)
+	}
+}

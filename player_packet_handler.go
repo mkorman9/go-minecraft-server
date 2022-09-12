@@ -443,6 +443,10 @@ func (pph *PlayerPacketHandler) OnJoin() error {
 	return nil
 }
 
+func (pph *PlayerPacketHandler) SendSystemChatMessage(message *ChatMessage) error {
+	return pph.sendSystemChatMessage(message)
+}
+
 func (pph *PlayerPacketHandler) setupEncryption() error {
 	cipherStream, err := NewCipherStream(pph.sharedSecret)
 	if err != nil {

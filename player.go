@@ -1,5 +1,7 @@
 package main
 
+import "log"
+
 type Player struct {
 	Name           string
 	UUID           UUID
@@ -38,6 +40,13 @@ func NewPlayer(world *World, ip string) *Player {
 
 func (p *Player) AssignPacketHandler(packetHandler *PlayerPacketHandler) {
 	p.packetHandler = packetHandler
+}
+
+func (p *Player) SendSystemChatMessage(message *ChatMessage) {
+	err := p.packetHandler.SendSystemChatMessage(message)
+	if err != nil {
+		log.Printf("Failed to send system chat message: %v\n", err)
+	}
 }
 
 func (p *Player) OnJoin() {
