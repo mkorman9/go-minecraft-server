@@ -9,7 +9,7 @@ import (
 
 type MojangPlayerVerification struct {
 	Verified bool
-	ID       string
+	UUID     *UUID
 }
 
 type mojangVerifyPlayerResponse struct {
@@ -61,5 +61,10 @@ func MojangVerifyPlayer(username, hash string) (*MojangPlayerVerification, error
 		return &MojangPlayerVerification{Verified: false}, nil
 	}
 
-	return &MojangPlayerVerification{Verified: true, ID: mojangResponse.ID}, nil
+	uuid, err := mojangIdToUUID(mojangResponse.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	return &MojangPlayerVerification{Verified: true, UUID: uuid}, nil
 }

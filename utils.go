@@ -69,3 +69,23 @@ func parseRemoteAddress(connection net.Conn) string {
 
 	return address
 }
+
+func mojangIdToUUID(mojangId string) (*UUID, error) {
+	upperPart := mojangId[:16]
+	lowerPart := mojangId[16:]
+
+	upperPartBytes, err := hex.DecodeString(upperPart)
+	if err != nil {
+		return nil, err
+	}
+
+	lowerPartBytes, err := hex.DecodeString(lowerPart)
+	if err != nil {
+		return nil, err
+	}
+
+	return &UUID{
+		Upper: int64(binary.BigEndian.Uint64(upperPartBytes)),
+		Lower: int64(binary.BigEndian.Uint64(lowerPartBytes)),
+	}, nil
+}
