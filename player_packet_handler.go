@@ -8,6 +8,7 @@ import (
 	"log"
 	"net"
 	"sync"
+	"time"
 )
 
 type PlayerState = int
@@ -350,8 +351,6 @@ func (pph *PlayerPacketHandler) OnSettings(packetReader *PacketReaderContext) er
 }
 
 func (pph *PlayerPacketHandler) OnPosition(packetReader *PacketReaderContext) error {
-	log.Println("received Position")
-
 	var packet PositionPacket
 	err := packet.Unmarshal(packetReader)
 	if err != nil {
@@ -365,8 +364,6 @@ func (pph *PlayerPacketHandler) OnPosition(packetReader *PacketReaderContext) er
 }
 
 func (pph *PlayerPacketHandler) OnPositionLook(packetReader *PacketReaderContext) error {
-	log.Println("received PositionLook")
-
 	var packet PositionLookPacket
 	err := packet.Unmarshal(packetReader)
 	if err != nil {
@@ -417,7 +414,7 @@ func (pph *PlayerPacketHandler) OnChatCommand(packetReader *PacketReaderContext)
 		return err
 	}
 
-	// TODO
+	pph.player.OnChatCommand(packet.Message, time.UnixMilli(packet.Timestamp))
 
 	return nil
 }
@@ -431,7 +428,7 @@ func (pph *PlayerPacketHandler) OnChatMessage(packetReader *PacketReaderContext)
 		return err
 	}
 
-	// TODO
+	pph.player.OnChatMessage(packet.Message, time.UnixMilli(packet.Timestamp))
 
 	return nil
 }

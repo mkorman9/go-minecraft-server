@@ -1,6 +1,9 @@
 package main
 
-import "log"
+import (
+	"log"
+	"time"
+)
 
 type Player struct {
 	Name           string
@@ -73,8 +76,17 @@ func (p *Player) OnGroundUpdate(onGround bool) {
 }
 
 func (p *Player) OnPluginChannel(channel string, data []byte) {
+
 }
 
 func (p *Player) OnArmAnimation(hand int) {
+
+}
+
+func (p *Player) OnChatCommand(command string, timestamp time.Time) {
+
+}
+
+func (p *Player) OnChatMessage(message string, timestamp time.Time) {
 
 }
