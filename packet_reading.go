@@ -60,6 +60,16 @@ func (prc *PacketReaderContext) FetchInt64() int64 {
 	}))
 }
 
+func (prc *PacketReaderContext) FetchFloat32() float32 {
+	value := prc.FetchInt32()
+	return math.Float32frombits(uint32(value))
+}
+
+func (prc *PacketReaderContext) FetchFloat64() float64 {
+	value := prc.FetchInt64()
+	return math.Float64frombits(uint64(value))
+}
+
 func (prc *PacketReaderContext) FetchUUID() UUID {
 	return UUID{
 		Upper: prc.FetchInt64(),

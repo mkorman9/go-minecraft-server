@@ -19,13 +19,6 @@ const (
 	PlayerStatePlay
 )
 
-type HandshakeType = int
-
-const (
-	HandshakeTypeStatus = 1
-	HandshakeTypeLogin  = 2
-)
-
 type PacketHandlingError struct {
 	wrapped error
 	reason  *ChatMessage
@@ -174,9 +167,15 @@ func (pph *PlayerPacketHandler) OnEncryptionPacket(packetId int, packetReader *P
 }
 
 func (pph *PlayerPacketHandler) OnPlayPacket(packetId int, packetReader *PacketReaderContext) error {
-	fmt.Println(packetId)
-
 	switch packetId {
+	case 0x07:
+		return pph.OnSettings(packetReader)
+	case 0x0c:
+		return pph.OnCustomPayload(packetReader)
+	case 0x13:
+		return pph.OnPosition(packetReader)
+	case 0x14:
+		return pph.OnPositionLook(packetReader)
 	default:
 		log.Printf("unrecognized packet id: 0x%x in play state\n", packetId)
 		return nil
@@ -322,6 +321,73 @@ func (pph *PlayerPacketHandler) OnEncryptionResponse(packetReader *PacketReaderC
 	return pph.OnJoin()
 }
 
+func (pph *PlayerPacketHandler) OnSettings(packetReader *PacketReaderContext) error {
+	log.Println("received Settings")
+
+	var packet SettingsPacket
+	err := packet.Unmarshal(packetReader)
+	if err != nil {
+		return err
+	}
+
+	pph.player.OnClientSettings(&PlayerClientSettings{
+		Locale:              packet.Locale,
+		ViewDistance:        packet.ViewDistance,
+		ChatColors:          packet.ChatColors,
+		SkinParts:           packet.SkinParts,
+		MainHand:            packet.MainHand,
+		EnableTextFiltering: packet.EnableTextFiltering,
+		EnableServerListing: packet.EnableServerListing,
+	})
+
+	return nil
+}
+
+func (pph *PlayerPacketHandler) OnPosition(packetReader *PacketReaderContext) error {
+	log.Println("received Position")
+
+	var packet PositionPacket
+	err := packet.Unmarshal(packetReader)
+	if err != nil {
+		return err
+	}
+
+	pph.player.OnPositionUpdate(packet.X, packet.Y, packet.Z)
+	pph.player.OnGroundUpdate(packet.OnGround)
+
+	return nil
+}
+
+func (pph *PlayerPacketHandler) OnPositionLook(packetReader *PacketReaderContext) error {
+	log.Println("received PositionLook")
+
+	var packet PositionLookPacket
+	err := packet.Unmarshal(packetReader)
+	if err != nil {
+		return err
+	}
+
+	pph.player.OnPositionUpdate(packet.X, packet.Y, packet.Z)
+	pph.player.OnGroundUpdate(packet.OnGround)
+	pph.player.OnLookUpdate(packet.Yaw, packet.Pitch)
+
+	return nil
+}
+
+func (pph *PlayerPacketHandler) OnCustomPayload(packetReader *PacketReaderContext) error {
+	log.Println("received CustomPayload")
+
+	var packet CustomPayloadPacket
+	err := packet.Unmarshal(packetReader)
+	if err != nil {
+		return err
+	}
+
+	pph.player.OnPluginChannel(packet.Channel, packet.Data)
+
+	return nil
+}
+
 func (pph *PlayerPacketHandler) Cancel(reason *ChatMessage) {
 	pph.canceledMutex.Lock()
 	if pph.canceled {
@@ -351,7 +417,6 @@ func (pph *PlayerPacketHandler) Cancel(reason *ChatMessage) {
 
 func (pph *PlayerPacketHandler) OnJoin() error {
 	pph.state = PlayerStatePlay
-	pph.world.PlayerList().RegisterPlayer(pph.player)
 	pph.player.OnJoin()
 
 	return pph.sendPlayPacket()

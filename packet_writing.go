@@ -103,6 +103,18 @@ func (pwc *PacketWriterContext) AppendInt64(value int64) {
 	)
 }
 
+func (pwc *PacketWriterContext) AppendFloat32(value float32) {
+	pwc.wrapError(
+		binary.Write(pwc.buffer, binary.BigEndian, value),
+	)
+}
+
+func (pwc *PacketWriterContext) AppendFloat64(value float64) {
+	pwc.wrapError(
+		binary.Write(pwc.buffer, binary.BigEndian, value),
+	)
+}
+
 func (pwc *PacketWriterContext) AppendUUID(value UUID) {
 	pwc.wrapError(
 		binary.Write(pwc.buffer, binary.BigEndian, value.Upper),

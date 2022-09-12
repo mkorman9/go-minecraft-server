@@ -5,11 +5,6 @@ type Packet interface {
 	Unmarshal(reader *PacketReaderContext) error
 }
 
-func UnmarshalPacket[P Packet](reader *PacketReaderContext, p P) (P, error) {
-	err := p.Unmarshal(reader)
-	return p, err
-}
-
 /*
 	0x00: Handshake
 */
@@ -352,4 +347,108 @@ func (pp *PlayPacket) Marshal(writer *PacketWriterContext) ([]byte, error) {
 
 func (pp *PlayPacket) Unmarshal(reader *PacketReaderContext) error {
 	return nil
+}
+
+/*
+	0x07: Settings
+*/
+
+type SettingsPacket struct {
+	Locale              string
+	ViewDistance        byte
+	ChatFlags           int
+	ChatColors          bool
+	SkinParts           byte
+	MainHand            int
+	EnableTextFiltering bool
+	EnableServerListing bool
+}
+
+func (sp *SettingsPacket) Marshal(ctx *PacketWriterContext) ([]byte, error) {
+	return nil, nil
+}
+
+func (sp *SettingsPacket) Unmarshal(reader *PacketReaderContext) error {
+	sp.Locale = reader.FetchString()
+	sp.ViewDistance = reader.FetchByte()
+	sp.ChatFlags = reader.FetchVarInt()
+	sp.ChatColors = reader.FetchBool()
+	sp.SkinParts = reader.FetchByte()
+	sp.MainHand = reader.FetchVarInt()
+	sp.EnableTextFiltering = reader.FetchBool()
+	sp.EnableServerListing = reader.FetchBool()
+
+	return reader.Error()
+}
+
+/*
+	0x0c: Custom Payload
+*/
+
+type CustomPayloadPacket struct {
+	Channel string
+	Data    []byte
+}
+
+func (cpp *CustomPayloadPacket) Marshal(ctx *PacketWriterContext) ([]byte, error) {
+	return nil, nil
+}
+
+func (cpp *CustomPayloadPacket) Unmarshal(reader *PacketReaderContext) error {
+	cpp.Channel = reader.FetchString()
+	cpp.Data = reader.FetchByteArray()
+
+	return reader.Error()
+}
+
+/*
+	0x13: Position
+*/
+
+type PositionPacket struct {
+	X        float64
+	Y        float64
+	Z        float64
+	OnGround bool
+}
+
+func (pp *PositionPacket) Marshal(ctx *PacketWriterContext) ([]byte, error) {
+	return nil, nil
+}
+
+func (pp *PositionPacket) Unmarshal(reader *PacketReaderContext) error {
+	pp.X = reader.FetchFloat64()
+	pp.Y = reader.FetchFloat64()
+	pp.Z = reader.FetchFloat64()
+	pp.OnGround = reader.FetchBool()
+
+	return reader.Error()
+}
+
+/*
+	0x14: Position & Look
+*/
+
+type PositionLookPacket struct {
+	X        float64
+	Y        float64
+	Z        float64
+	Yaw      float32
+	Pitch    float32
+	OnGround bool
+}
+
+func (plp *PositionLookPacket) Marshal(ctx *PacketWriterContext) ([]byte, error) {
+	return nil, nil
+}
+
+func (plp *PositionLookPacket) Unmarshal(reader *PacketReaderContext) error {
+	plp.X = reader.FetchFloat64()
+	plp.Y = reader.FetchFloat64()
+	plp.Z = reader.FetchFloat64()
+	plp.Yaw = reader.FetchFloat32()
+	plp.Pitch = reader.FetchFloat32()
+	plp.OnGround = reader.FetchBool()
+
+	return reader.Error()
 }
