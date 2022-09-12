@@ -174,9 +174,12 @@ func (pph *PlayerPacketHandler) OnEncryptionPacket(packetId int, packetReader *P
 }
 
 func (pph *PlayerPacketHandler) OnPlayPacket(packetId int, packetReader *PacketReaderContext) error {
+	fmt.Println(packetId)
+
 	switch packetId {
 	default:
-		return fmt.Errorf("unrecognized packet id: 0x%x in play state", packetId)
+		log.Printf("unrecognized packet id: 0x%x in play state\n", packetId)
+		return nil
 	}
 }
 
