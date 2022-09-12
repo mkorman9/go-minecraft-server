@@ -1,7 +1,6 @@
 package main
 
 import (
-	"crypto/rsa"
 	"errors"
 	"fmt"
 	"io"
@@ -45,11 +44,10 @@ type PlayerPacketHandler struct {
 	writer       io.Writer
 	packetWriter *PacketWriter
 
-	ip              string
-	playerPublicKey *rsa.PublicKey
-	verifyToken     string
-	sharedSecret    []byte
-	serverHash      string
+	ip           string
+	verifyToken  string
+	sharedSecret []byte
+	serverHash   string
 
 	canceled      bool
 	canceledMutex sync.Mutex
@@ -240,16 +238,17 @@ func (pph *PlayerPacketHandler) OnLoginStartRequest(packetReader *PacketReaderCo
 	}
 
 	pph.player.Name = request.Name
+	pph.player.Signature = request.Signature
 	pph.verifyToken, _ = getSecureRandomString(VerifyTokenLength)
 
-	if request.PublicKey != "" {
+	if request.PublicKey != nil {
 		publicKey, err := loadPublicKey(request.PublicKey)
 		if err != nil {
 			log.Printf("%v\n", err)
 			return NewPacketHandlingError(err, NewChatMessage("Malformed Public Key"))
 		}
 
-		pph.playerPublicKey = publicKey
+		pph.player.PublicKey = publicKey
 	}
 
 	if pph.world.Settings().OnlineMode {
@@ -301,7 +300,7 @@ func (pph *PlayerPacketHandler) OnEncryptionResponse(packetReader *PacketReaderC
 		}
 	} else {
 		err = verifyRsaSignature(
-			pph.playerPublicKey,
+			pph.player.PublicKey,
 			pph.verifyToken,
 			response.Salt,
 			response.MessageSignature,

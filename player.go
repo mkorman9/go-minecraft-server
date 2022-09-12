@@ -1,6 +1,7 @@
 package main
 
 import (
+	"crypto/rsa"
 	"log"
 	"time"
 )
@@ -9,6 +10,8 @@ type Player struct {
 	Name           string
 	UUID           UUID
 	IP             string
+	PublicKey      *rsa.PublicKey
+	Signature      []byte
 	ClientSettings *PlayerClientSettings
 	X              float64
 	Y              float64

@@ -91,8 +91,8 @@ func (pr *PongResponse) Unmarshal(reader *PacketReaderContext) error {
 type LoginStartRequest struct {
 	Name      string
 	Timestamp int64
-	PublicKey string
-	Signature string
+	PublicKey []byte
+	Signature []byte
 }
 
 func (lsr *LoginStartRequest) Marshal(writer *PacketWriterContext) ([]byte, error) {
@@ -105,8 +105,8 @@ func (lsr *LoginStartRequest) Unmarshal(reader *PacketReaderContext) error {
 
 	if hasSigData {
 		lsr.Timestamp = reader.FetchInt64()
-		lsr.PublicKey = reader.FetchString()
-		lsr.Signature = reader.FetchString()
+		lsr.PublicKey = reader.FetchByteArray()
+		lsr.Signature = reader.FetchByteArray()
 	}
 
 	return reader.Error()

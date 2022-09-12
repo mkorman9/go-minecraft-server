@@ -33,8 +33,8 @@ func getRandomUUID() UUID {
 	}
 }
 
-func loadPublicKey(publicKey string) (*rsa.PublicKey, error) {
-	key, err := x509.ParsePKIXPublicKey([]byte(publicKey))
+func loadPublicKey(publicKey []byte) (*rsa.PublicKey, error) {
+	key, err := x509.ParsePKIXPublicKey(publicKey)
 	if err != nil {
 		return nil, err
 	}
