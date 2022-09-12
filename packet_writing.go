@@ -50,11 +50,7 @@ func (pwc *PacketWriterContext) Bytes() []byte {
 			_, _ = zlibWriter.Write(pwc.buffer.Bytes())
 			_ = zlibWriter.Close()
 
-			tmp := &PacketWriterContext{buffer: bytes.NewBuffer(make([]byte, 0))}
-			tmp.AppendVarInt(dataSize)
-			dataSizeSize := tmp.buffer.Len()
-
-			finalWriter.AppendVarInt(dataSizeSize + zlibBuffer.Len())
+			finalWriter.AppendVarInt(getVarIntSize(dataSize) + zlibBuffer.Len())
 			finalWriter.AppendVarInt(dataSize)
 			finalWriter.buffer.Write(zlibBuffer.Bytes())
 		} else {

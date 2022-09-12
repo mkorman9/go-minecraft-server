@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"crypto"
 	"crypto/rand"
 	"crypto/rsa"
@@ -12,6 +13,12 @@ import (
 	"net"
 	"strings"
 )
+
+func getVarIntSize(value int) int {
+	tmp := &PacketWriterContext{buffer: bytes.NewBuffer(make([]byte, 0))}
+	tmp.AppendVarInt(value)
+	return tmp.buffer.Len()
+}
 
 func getSecureRandomString(lengthBytes int) (string, error) {
 	var bytes = make([]byte, lengthBytes)
