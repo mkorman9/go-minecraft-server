@@ -3,11 +3,11 @@ package main
 import "encoding/json"
 
 type ServerStatus struct {
-	Version            ServerStatusVersion     `json:"version"`
-	Players            ServerStatusPlayers     `json:"players"`
-	Description        ServerStatusDescription `json:"description"`
-	PreviewsChat       bool                    `json:"previewsChat"`
-	EnforcesSecureChat bool                    `json:"enforcesSecureChat"`
+	Version            ServerStatusVersion `json:"version"`
+	Players            ServerStatusPlayers `json:"players"`
+	Description        ChatMessage         `json:"description"`
+	PreviewsChat       bool                `json:"previewsChat"`
+	EnforcesSecureChat bool                `json:"enforcesSecureChat"`
 }
 
 type ServerStatusVersion struct {
@@ -19,10 +19,6 @@ type ServerStatusPlayers struct {
 	Max    int   `json:"max"`
 	Online int   `json:"online"`
 	Sample []any `json:"sample"`
-}
-
-type ServerStatusDescription struct {
-	Text string `json:"text"`
 }
 
 func (ss *ServerStatus) Encode() (string, error) {

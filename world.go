@@ -47,7 +47,7 @@ func (w *World) GetStatus() *ServerStatus {
 			Online: w.PlayerList().Len(),
 			Sample: nil,
 		},
-		Description: ServerStatusDescription{
+		Description: ChatMessage{
 			Text: w.settings.Description,
 		},
 		PreviewsChat:       true,
