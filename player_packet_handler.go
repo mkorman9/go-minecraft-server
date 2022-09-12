@@ -706,6 +706,7 @@ func (pph *PlayerPacketHandler) readPacketMetadata() (*PacketMetadata, error) {
 			UseCompression:       false,
 		}, nil
 	default:
+		// compression
 		compressedDataSize, err := pph.peekVarInt()
 		if err != nil {
 			if err == io.EOF {
@@ -732,6 +733,10 @@ func (pph *PlayerPacketHandler) readPacketMetadata() (*PacketMetadata, error) {
 			}
 
 			return nil, err
+		}
+
+		if compressedDataSize > MaxPacketSize || uncompressedDataSize > MaxPacketSize {
+			return nil, errors.New("invalid packet size")
 		}
 
 		compressedDataSize -= getVarIntSize(uncompressedDataSize)
