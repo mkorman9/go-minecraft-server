@@ -297,7 +297,7 @@ type PlayPacket struct {
 	PreviousGameMode    byte
 	WorldNames          []string
 	DimensionCodec      DimensionCodec
-	Dimension           Dimension
+	WorldType           string
 	WorldName           string
 	HashedSeed          int64
 	MaxPlayers          int
@@ -324,7 +324,7 @@ func (pp *PlayPacket) Marshal(writer *PacketWriterContext) ([]byte, error) {
 	}
 
 	writer.AppendNBT(&pp.DimensionCodec)
-	writer.AppendNBT(&pp.Dimension)
+	writer.AppendString(pp.WorldType)
 	writer.AppendString(pp.WorldName)
 	writer.AppendInt64(pp.HashedSeed)
 	writer.AppendVarInt(pp.MaxPlayers)
