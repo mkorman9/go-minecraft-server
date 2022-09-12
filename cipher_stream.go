@@ -19,14 +19,14 @@ type CFB8 struct {
 	encryptMode bool
 }
 
-func NewCipherStream(key string) (*CipherStream, error) {
-	block, err := aes.NewCipher([]byte(key))
+func NewCipherStream(key []byte) (*CipherStream, error) {
+	block, err := aes.NewCipher(key)
 	if err != nil {
 		return nil, err
 	}
 
-	encrypter := &CFB8{block: block, key: []byte(key), tmp: make([]byte, block.BlockSize()), encryptMode: true}
-	decrypter := &CFB8{block: block, key: []byte(key), tmp: make([]byte, block.BlockSize()), encryptMode: false}
+	encrypter := &CFB8{block: block, key: key, tmp: make([]byte, block.BlockSize()), encryptMode: true}
+	decrypter := &CFB8{block: block, key: key, tmp: make([]byte, block.BlockSize()), encryptMode: false}
 
 	return &CipherStream{
 		block:     block,

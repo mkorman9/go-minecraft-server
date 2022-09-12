@@ -1,7 +1,6 @@
 package main
 
 import (
-	"io"
 	"log"
 	"net"
 	"os"
@@ -20,92 +19,40 @@ func main() {
 		CompressionThreshold: -1,
 	}
 
-	serverKey, err := GenerateServerKey()
+	world, err := NewWorld(settings)
 	if err != nil {
 		log.Fatalln(err)
 	}
 
-	listener, err := net.Listen("tcp", settings.ServerAddress)
+	startSigintListener(world)
+
+	log.Println("server listening")
+
+	err = world.Server().AcceptLoop(func(connection net.Conn, ip string) {
+		player := NewPlayer(world, ip)
+		packetHandler := NewPlayerPacketHandler(player, world, connection, ip)
+		player.AssignPacketHandler(packetHandler)
+
+		log.Printf("player connected from %s\n", ip)
+
+		packetHandler.ReadLoop()
+
+		log.Println("player disconnected")
+	})
 	if err != nil {
 		log.Fatalln(err)
 	}
 
-	world := NewWorld(settings, listener, serverKey)
+	log.Println("exiting")
+}
 
+func startSigintListener(world *World) {
 	go func() {
 		shutdownSignalsChannel := make(chan os.Signal, 1)
 		signal.Notify(shutdownSignalsChannel, syscall.SIGINT, syscall.SIGTERM)
 
 		<-shutdownSignalsChannel
 
-		world.Shutdown()
+		world.Server().Shutdown()
 	}()
-
-	log.Println("server listening")
-
-	for {
-		connection, err := listener.Accept()
-		if err != nil {
-			if netOpError, ok := err.(*net.OpError); ok {
-				if netOpError.Err.Error() == "use of closed network connection" {
-					break
-				}
-			}
-
-			log.Fatalln(err)
-		}
-
-		go handleConnection(world, connection)
-	}
-
-	log.Println("exiting")
-}
-
-func handleConnection(world *World, connection net.Conn) {
-	player := NewPlayer(world, connection)
-	world.RegisterPlayer(player)
-
-	defer func() {
-		if r := recover(); r != nil {
-			log.Printf("%v\n", r)
-			player.Disconnect()
-		}
-
-		world.UnregisterPlayer(player)
-	}()
-
-	for {
-		packetSize, err := ReadPacketSize(player.reader)
-		if err != nil {
-			if err == io.EOF {
-				player.Disconnect()
-				return
-			}
-			if netOpError, ok := err.(*net.OpError); ok {
-				if netOpError.Err.Error() == "use of closed network connection" {
-					return
-				}
-			}
-
-			log.Printf("%v\n", err)
-			player.Disconnect()
-			return
-		}
-
-		if packetSize > MaxPacketSize {
-			log.Println("invalid packet size")
-			player.Disconnect()
-			return
-		}
-
-		packetData := make([]byte, packetSize)
-		_, err = player.reader.Read(packetData)
-		if err != nil {
-			log.Printf("%v\n", err)
-			player.Disconnect()
-			return
-		}
-
-		player.HandlePacket(packetData)
-	}
 }

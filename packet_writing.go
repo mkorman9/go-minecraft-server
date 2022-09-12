@@ -138,10 +138,14 @@ func (pwc *PacketWriterContext) AppendVarLong(value int64) {
 	}
 }
 
-func (pwc *PacketWriterContext) AppendString(value string) {
+func (pwc *PacketWriterContext) AppendByteArray(value []byte) {
 	pwc.AppendVarInt(len(value))
-	_, err := pwc.buffer.Write([]byte(value))
+	_, err := pwc.buffer.Write(value)
 	pwc.wrapError(err)
+}
+
+func (pwc *PacketWriterContext) AppendString(value string) {
+	pwc.AppendByteArray([]byte(value))
 }
 
 func (pwc *PacketWriterContext) AppendNBT(obj any) {

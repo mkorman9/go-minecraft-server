@@ -14,18 +14,11 @@ func UnmarshalPacket[P Packet](reader *PacketReaderContext, p P) (P, error) {
 	0x00: Handshake
 */
 
-type HandshakeState = int
-
-const (
-	HandshakeStateStatus = 1
-	HandshakeStateLogin  = 2
-)
-
 type HandshakeRequest struct {
 	ProtocolVersion int
 	ServerAddress   string
 	ServerPort      int16
-	NextState       HandshakeState
+	NextState       HandshakeType
 }
 
 func (hr *HandshakeRequest) Marshal(ctx *PacketWriterContext) ([]byte, error) {
@@ -130,14 +123,14 @@ func (lsr *LoginStartRequest) Unmarshal(reader *PacketReaderContext) error {
 
 type EncryptionRequest struct {
 	ServerID    string
-	PublicKey   string
+	PublicKey   []byte
 	VerifyToken string
 }
 
 func (er *EncryptionRequest) Marshal(writer *PacketWriterContext) ([]byte, error) {
 	writer.AppendByte(0x01)
 	writer.AppendString(er.ServerID)
-	writer.AppendString(er.PublicKey)
+	writer.AppendByteArray(er.PublicKey)
 	writer.AppendString(er.VerifyToken)
 
 	if writer.Error() != nil {
@@ -179,10 +172,10 @@ func (clp *CancelLoginPacket) Unmarshal(reader *PacketReaderContext) error {
 */
 
 type EncryptionResponse struct {
-	SharedSecret     string
-	VerifyToken      string
+	SharedSecret     []byte
+	VerifyToken      []byte
 	Salt             int64
-	MessageSignature string
+	MessageSignature []byte
 }
 
 func (er *EncryptionResponse) Marshal(writer *PacketWriterContext) ([]byte, error) {
@@ -190,14 +183,14 @@ func (er *EncryptionResponse) Marshal(writer *PacketWriterContext) ([]byte, erro
 }
 
 func (er *EncryptionResponse) Unmarshal(reader *PacketReaderContext) error {
-	er.SharedSecret = reader.FetchString()
+	er.SharedSecret = reader.FetchByteArray()
 	hasVerifyToken := reader.FetchBool()
 
 	if hasVerifyToken {
-		er.VerifyToken = reader.FetchString()
+		er.VerifyToken = reader.FetchByteArray()
 	} else {
 		er.Salt = reader.FetchInt64()
-		er.MessageSignature = reader.FetchString()
+		er.MessageSignature = reader.FetchByteArray()
 	}
 
 	return reader.Error()

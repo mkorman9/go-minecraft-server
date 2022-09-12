@@ -113,16 +113,20 @@ func (prc *PacketReaderContext) FetchVarLong() int64 {
 	return value
 }
 
-func (prc *PacketReaderContext) FetchString() string {
+func (prc *PacketReaderContext) FetchByteArray() []byte {
 	length := prc.FetchVarInt()
 	if prc.cursor+length > len(prc.data) {
 		prc.err = errors.New("out of bounds read")
-		return ""
+		return nil
 	}
 
-	value := string(prc.data[prc.cursor : prc.cursor+length])
+	value := prc.data[prc.cursor : prc.cursor+length]
 	prc.cursor += length
 	return value
+}
+
+func (prc *PacketReaderContext) FetchString() string {
+	return string(prc.FetchByteArray())
 }
 
 func (prc *PacketReaderContext) FetchNBT(v any) {
@@ -141,33 +145,4 @@ func (prc *PacketReaderContext) FetchNBT(v any) {
 func (prc *PacketReaderContext) FetchPosition() *Position {
 	value := prc.FetchInt64()
 	return PositionFromInt64(value)
-}
-
-func ReadPacketSize(reader io.Reader) (int, error) {
-	var value int
-	var position int
-	var currentByte byte
-
-	for {
-		buff := make([]byte, 1)
-		_, err := reader.Read(buff)
-		if err != nil {
-			return -1, err
-		}
-
-		currentByte = buff[0]
-		value |= int(currentByte) & SegmentBits << position
-
-		if (int(currentByte) & ContinueBit) == 0 {
-			break
-		}
-
-		position += 7
-
-		if position >= 32 {
-			return -1, errors.New("invalid VarInt size")
-		}
-	}
-
-	return value, nil
 }

@@ -40,7 +40,7 @@ func loadPublicKey(publicKey string) (*rsa.PublicKey, error) {
 	return key.(*rsa.PublicKey), nil
 }
 
-func verifyRsaSignature(publicKey *rsa.PublicKey, msg string, salt int64, signature string) error {
+func verifyRsaSignature(publicKey *rsa.PublicKey, msg string, salt int64, signature []byte) error {
 	saltEncoded := make([]byte, 8)
 	binary.BigEndian.PutUint64(saltEncoded, uint64(salt))
 
@@ -48,5 +48,5 @@ func verifyRsaSignature(publicKey *rsa.PublicKey, msg string, salt int64, signat
 	msgToHash = append(msgToHash, saltEncoded...)
 
 	hash := sha256.Sum256(msgToHash)
-	return rsa.VerifyPKCS1v15(publicKey, crypto.SHA256, hash[:], []byte(signature))
+	return rsa.VerifyPKCS1v15(publicKey, crypto.SHA256, hash[:], signature)
 }

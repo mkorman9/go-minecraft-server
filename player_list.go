@@ -37,16 +37,9 @@ func (pl *PlayerList) UnregisterPlayer(player *Player) {
 	}
 }
 
-func (pl *PlayerList) GetOnlineSize() int {
+func (pl *PlayerList) Len() int {
 	pl.m.RLock()
 	defer pl.m.RUnlock()
 
-	count := 0
-	for _, player := range pl.list {
-		if player.IsOnline() {
-			count++
-		}
-	}
-
-	return count
+	return len(pl.list)
 }
