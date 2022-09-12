@@ -8,7 +8,6 @@ import (
 	"crypto/x509"
 	"encoding/hex"
 	"net"
-	"strings"
 )
 
 type Server struct {
@@ -53,7 +52,7 @@ func (s *Server) AcceptLoop(handleConnection func(conn net.Conn, ip string)) err
 			return err
 		}
 
-		ip, _, _ := strings.Cut(connection.RemoteAddr().String(), ":")
+		ip := parseRemoteAddress(connection)
 
 		go handleConnection(connection, ip)
 	}

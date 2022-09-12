@@ -9,6 +9,8 @@ import (
 	"encoding/binary"
 	"encoding/hex"
 	"github.com/gofrs/uuid"
+	"net"
+	"strings"
 )
 
 func getSecureRandomString(lengthBytes int) (string, error) {
@@ -49,4 +51,14 @@ func verifyRsaSignature(publicKey *rsa.PublicKey, msg string, salt int64, signat
 
 	hash := sha256.Sum256(msgToHash)
 	return rsa.VerifyPKCS1v15(publicKey, crypto.SHA256, hash[:], signature)
+}
+
+func parseRemoteAddress(connection net.Conn) string {
+	address := connection.RemoteAddr().String()
+	portIndex := strings.LastIndex(address, ":")
+	if portIndex >= 0 {
+		address = address[:portIndex]
+	}
+
+	return address
 }
