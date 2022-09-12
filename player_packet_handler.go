@@ -447,7 +447,7 @@ func (pph *PlayerPacketHandler) sendPlayPacket() error {
 		GameMode:            0,
 		PreviousGameMode:    0xff,
 		WorldNames:          []string{"minecraft:overworld", "minecraft:the_nether", "minecraft:the_nether"},
-		DimensionCodec:      DefaultRegistryCodec(),
+		DimensionCodec:      *pph.world.Data().DimensionCodec,
 		WorldType:           "minecraft:overworld",
 		WorldName:           "minecraft:overworld",
 		HashedSeed:          1,
