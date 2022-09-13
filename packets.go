@@ -288,8 +288,8 @@ func (dp *DisconnectPacket) Unmarshal(reader *PacketReaderContext) error {
 type PlayPacket struct {
 	EntityID            int32
 	IsHardcore          bool
-	GameMode            byte
-	PreviousGameMode    byte
+	GameMode            GameMode
+	PreviousGameMode    GameMode
 	WorldNames          []string
 	DimensionCodec      DimensionCodec
 	WorldType           string
@@ -454,6 +454,28 @@ func (plp *PositionLookPacket) Unmarshal(reader *PacketReaderContext) error {
 }
 
 /*
+	0x15: Look
+*/
+
+type LookPacket struct {
+	Yaw      float32
+	Pitch    float32
+	OnGround bool
+}
+
+func (lp *LookPacket) Marshal(writer *PacketWriterContext) ([]byte, error) {
+	return nil, nil
+}
+
+func (lp *LookPacket) Unmarshal(reader *PacketReaderContext) error {
+	lp.Yaw = reader.FetchFloat32()
+	lp.Pitch = reader.FetchFloat32()
+	lp.OnGround = reader.FetchBool()
+
+	return reader.Error()
+}
+
+/*
 	0x2e: Arm Animation (left click)
 */
 
@@ -467,6 +489,44 @@ func (aap *ArmAnimationPacket) Marshal(writer *PacketWriterContext) ([]byte, err
 
 func (aap *ArmAnimationPacket) Unmarshal(reader *PacketReaderContext) error {
 	aap.Hand = reader.FetchVarInt()
+
+	return reader.Error()
+}
+
+/*
+	0x1b: Abilities
+*/
+
+type AbilitiesPacket struct {
+	Flags byte
+}
+
+func (ap *AbilitiesPacket) Marshal(writer *PacketWriterContext) ([]byte, error) {
+	return nil, nil
+}
+
+func (ap *AbilitiesPacket) Unmarshal(reader *PacketReaderContext) error {
+	ap.Flags = reader.FetchByte()
+
+	return reader.Error()
+}
+
+/*
+	0x2a: SetCreativeSlot
+*/
+
+type SetCreativeSlotPacket struct {
+	Slot int16
+	Item SlotData
+}
+
+func (scsp *SetCreativeSlotPacket) Marshal(writer *PacketWriterContext) ([]byte, error) {
+	return nil, nil
+}
+
+func (scsp *SetCreativeSlotPacket) Unmarshal(reader *PacketReaderContext) error {
+	scsp.Slot = reader.FetchInt16()
+	scsp.Item = *reader.FetchSlot()
 
 	return reader.Error()
 }

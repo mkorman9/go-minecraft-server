@@ -19,6 +19,7 @@ type Player struct {
 	Yaw            float32
 	Pitch          float32
 	OnGround       bool
+	GameMode       GameMode
 
 	packetHandler *PlayerPacketHandler
 	world         *World
@@ -37,10 +38,11 @@ type PlayerClientSettings struct {
 
 func NewPlayer(world *World, ip string) *Player {
 	return &Player{
-		Name:  "",
-		UUID:  getRandomUUID(),
-		IP:    ip,
-		world: world,
+		Name:     "",
+		UUID:     getRandomUUID(),
+		IP:       ip,
+		GameMode: GameModeUnknown,
+		world:    world,
 	}
 }
 
@@ -63,8 +65,9 @@ func (p *Player) SetPosition(x, y, z float64) {
 	_ = p.packetHandler.SynchronizePosition(x, y, z)
 }
 
-func (p *Player) OnJoin() {
+func (p *Player) OnJoin(gameMode GameMode) {
 	p.world.PlayerList().RegisterPlayer(p)
+	p.GameMode = gameMode
 }
 
 func (p *Player) OnClientSettings(clientSettings *PlayerClientSettings) {

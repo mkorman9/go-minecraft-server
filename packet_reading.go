@@ -145,8 +145,10 @@ func (prc *PacketReaderContext) FetchNBT(v any) {
 
 	_, err := nbt.NewDecoder(reader).Decode(v)
 	if err != nil {
-		prc.err = err
-		return
+		if !errors.Is(err, nbt.ErrEND) {
+			prc.err = err
+			return
+		}
 	}
 
 	prc.cursor += int(math.MaxInt64 - reader.N)
@@ -155,4 +157,19 @@ func (prc *PacketReaderContext) FetchNBT(v any) {
 func (prc *PacketReaderContext) FetchPosition() *Position {
 	value := prc.FetchInt64()
 	return PositionFromInt64(value)
+}
+
+func (prc *PacketReaderContext) FetchSlot() *SlotData {
+	var slot SlotData
+
+	slot.Present = prc.FetchBool()
+	if slot.Present {
+		slot.ItemID = prc.FetchVarInt()
+		slot.ItemCount = prc.FetchByte()
+
+		slot.NBT = nbt.RawMessage{Type: nbt.TagEnd}
+		prc.FetchNBT(&slot.NBT)
+	}
+
+	return &slot
 }

@@ -173,6 +173,15 @@ func (pwc *PacketWriterContext) AppendPosition(position *Position) {
 	pwc.AppendInt64(position.ToInt64())
 }
 
+func (pwc *PacketWriterContext) AppendSlot(slot *SlotData) {
+	pwc.AppendBool(slot.Present)
+	if slot.Present {
+		pwc.AppendVarInt(slot.ItemID)
+		pwc.AppendByte(slot.ItemCount)
+		pwc.AppendNBT(&slot.NBT)
+	}
+}
+
 func (pwc *PacketWriterContext) wrapError(err error) {
 	if err != nil {
 		pwc.err = err

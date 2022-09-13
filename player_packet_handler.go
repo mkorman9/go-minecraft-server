@@ -189,8 +189,14 @@ func (pph *PlayerPacketHandler) OnPlayPacket(packetId int, packetReader *PacketR
 		return pph.OnPosition(packetReader)
 	case 0x14:
 		return pph.OnPositionLook(packetReader)
+	case 0x15:
+		return pph.OnLook(packetReader)
 	case 0x2e:
 		return pph.OnArmAnimation(packetReader)
+	case 0x1b:
+		return pph.OnAbilities(packetReader)
+	case 0x2a:
+		return pph.OnSetCreativeSlot(packetReader)
 	case 0x03:
 		return pph.OnChatCommand(packetReader)
 	case 0x04:
@@ -404,6 +410,19 @@ func (pph *PlayerPacketHandler) OnPositionLook(packetReader *PacketReaderContext
 	return nil
 }
 
+func (pph *PlayerPacketHandler) OnLook(packetReader *PacketReaderContext) error {
+	var packet LookPacket
+	err := packet.Unmarshal(packetReader)
+	if err != nil {
+		return err
+	}
+
+	pph.player.OnGroundUpdate(packet.OnGround)
+	pph.player.OnLookUpdate(packet.Yaw, packet.Pitch)
+
+	return nil
+}
+
 func (pph *PlayerPacketHandler) OnCustomPayload(packetReader *PacketReaderContext) error {
 	log.Println("received CustomPayload")
 
@@ -428,6 +447,34 @@ func (pph *PlayerPacketHandler) OnArmAnimation(packetReader *PacketReaderContext
 	}
 
 	pph.player.OnArmAnimation(packet.Hand)
+
+	return nil
+}
+
+func (pph *PlayerPacketHandler) OnAbilities(packetReader *PacketReaderContext) error {
+	log.Println("received Abilities")
+
+	var packet AbilitiesPacket
+	err := packet.Unmarshal(packetReader)
+	if err != nil {
+		return err
+	}
+
+	// TODO
+
+	return nil
+}
+
+func (pph *PlayerPacketHandler) OnSetCreativeSlot(packetReader *PacketReaderContext) error {
+	log.Println("received SetCreativeSlot")
+
+	var packet SetCreativeSlotPacket
+	err := packet.Unmarshal(packetReader)
+	if err != nil {
+		return err
+	}
+
+	// TODO
 
 	return nil
 }
@@ -496,7 +543,7 @@ func (pph *PlayerPacketHandler) OnJoin() error {
 	}
 
 	pph.state = PlayerStatePlay
-	pph.player.OnJoin()
+	pph.player.OnJoin(GameModeSurvival)
 
 	return nil
 }
@@ -600,8 +647,8 @@ func (pph *PlayerPacketHandler) sendPlayPacket() error {
 	packet := &PlayPacket{
 		EntityID:            0,
 		IsHardcore:          false,
-		GameMode:            0,
-		PreviousGameMode:    0xff,
+		GameMode:            GameModeSurvival,
+		PreviousGameMode:    GameModeUnknown,
 		WorldNames:          []string{"minecraft:overworld", "minecraft:the_nether", "minecraft:the_nether"},
 		DimensionCodec:      *pph.world.Data().DimensionCodec,
 		WorldType:           "minecraft:overworld",
