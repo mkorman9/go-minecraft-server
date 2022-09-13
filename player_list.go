@@ -1,6 +1,9 @@
 package main
 
-import "sync"
+import (
+	"strings"
+	"sync"
+)
 
 type PlayerList struct {
 	m    sync.RWMutex
@@ -51,4 +54,19 @@ func (pl *PlayerList) All(handler func(*Player)) {
 	for _, player := range pl.list {
 		handler(player)
 	}
+}
+
+func (pl *PlayerList) ByName(name string, handler func(*Player)) (found bool) {
+	pl.m.RLock()
+	defer pl.m.RUnlock()
+
+	for _, player := range pl.list {
+		if strings.EqualFold(player.Name, name) {
+			found = true
+			handler(player)
+			break
+		}
+	}
+
+	return
 }
