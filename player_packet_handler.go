@@ -559,7 +559,9 @@ func (pph *PlayerPacketHandler) Cancel(reason *ChatMessage) {
 }
 
 func (pph *PlayerPacketHandler) OnJoin() error {
-	err := pph.sendPlayPacket()
+	pph.player.EntityID = pph.world.GenerateEntityID()
+
+	err := pph.sendPlayPacket(pph.player.EntityID)
 	if err != nil {
 		return err
 	}
@@ -674,24 +676,24 @@ func (pph *PlayerPacketHandler) sendLoginSuccessResponse() error {
 	return pph.writePacket(response)
 }
 
-func (pph *PlayerPacketHandler) sendPlayPacket() error {
+func (pph *PlayerPacketHandler) sendPlayPacket(entityID int32) error {
 	packet := &PlayPacket{
-		EntityID:            0,
-		IsHardcore:          false,
-		GameMode:            GameModeSurvival,
+		EntityID:            entityID,
+		IsHardcore:          pph.world.Data().IsHardcore,
+		GameMode:            pph.world.Data().GameMode,
 		PreviousGameMode:    GameModeUnknown,
-		WorldNames:          []string{"minecraft:overworld", "minecraft:the_nether", "minecraft:the_nether"},
+		WorldNames:          pph.world.Data().WorldNames,
 		DimensionCodec:      *pph.world.Data().DimensionCodec,
-		WorldType:           "minecraft:overworld",
-		WorldName:           "minecraft:overworld",
-		HashedSeed:          1,
+		WorldType:           pph.world.Data().SpawnDimension,
+		WorldName:           pph.world.Data().SpawnDimension,
+		HashedSeed:          pph.world.Data().HashedSeed,
 		MaxPlayers:          pph.world.Settings().MaxPlayers,
-		ViewDistance:        10,
-		SimulationDistance:  10,
-		ReducedDebugInfo:    false,
-		EnableRespawnScreen: true,
-		IsDebug:             true,
-		IsFlat:              false,
+		ViewDistance:        pph.world.Settings().ViewDistance,
+		SimulationDistance:  pph.world.Settings().SimulationDistance,
+		ReducedDebugInfo:    !pph.world.Settings().IsDebug,
+		EnableRespawnScreen: pph.world.Data().EnableRespawnScreen,
+		IsDebug:             pph.world.Settings().IsDebug,
+		IsFlat:              pph.world.Data().IsFlat,
 	}
 
 	return pph.writePacket(packet)

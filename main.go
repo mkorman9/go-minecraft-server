@@ -17,6 +17,9 @@ func main() {
 		MaxPlayers:           2137,
 		OnlineMode:           false,
 		CompressionThreshold: -1,
+		IsDebug:              true,
+		ViewDistance:         10,
+		SimulationDistance:   10,
 	}
 
 	world, err := NewWorld(settings)

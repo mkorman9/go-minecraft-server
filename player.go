@@ -9,6 +9,7 @@ import (
 type Player struct {
 	Name           string
 	UUID           UUID
+	EntityID       int32
 	IP             string
 	PublicKey      *rsa.PublicKey
 	Signature      []byte
@@ -42,6 +43,7 @@ func NewPlayer(world *World, ip string) *Player {
 	return &Player{
 		Name:     "",
 		UUID:     getRandomUUID(),
+		EntityID: -1,
 		IP:       ip,
 		GameMode: GameModeUnknown,
 		world:    world,

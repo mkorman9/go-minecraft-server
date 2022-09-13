@@ -11,6 +11,7 @@ type World struct {
 	server         *Server
 	playerList     *PlayerList
 	backgroundJob  *BackgroundJob
+	entityStore    *EntityStore
 	serverListener net.Listener
 }
 
@@ -26,10 +27,11 @@ func NewWorld(settings *Settings) (*World, error) {
 	}
 
 	world := &World{
-		data:       data,
-		server:     server,
-		settings:   settings,
-		playerList: NewPlayerList(),
+		data:        data,
+		server:      server,
+		settings:    settings,
+		playerList:  NewPlayerList(),
+		entityStore: NewEntityStore(),
 	}
 
 	world.backgroundJob = NewBackgroundJob(world)
@@ -78,4 +80,8 @@ func (w *World) BroadcastKeepAlive() {
 		keepAliveID := rand.Int63()
 		player.SendKeepAlive(keepAliveID)
 	})
+}
+
+func (w *World) GenerateEntityID() int32 {
+	return w.entityStore.GenerateID()
 }
