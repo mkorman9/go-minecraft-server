@@ -1,6 +1,7 @@
 package main
 
 import (
+	"math/rand"
 	"net"
 )
 
@@ -70,4 +71,11 @@ func (w *World) GetStatus() *ServerStatus {
 		PreviewsChat:       true,
 		EnforcesSecureChat: true,
 	}
+}
+
+func (w *World) BroadcastKeepAlive() {
+	w.PlayerList().All(func(player *Player) {
+		keepAliveID := rand.Int63()
+		player.SendKeepAlive(keepAliveID)
+	})
 }

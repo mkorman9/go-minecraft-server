@@ -702,3 +702,44 @@ func (tcp *TeleportConfirmPacket) Unmarshal(reader *PacketReaderContext) error {
 
 	return reader.Error()
 }
+
+/*
+	0x1e: Keep Alive
+*/
+
+type KeepAlivePacket struct {
+	KeepAliveID int64
+}
+
+func (kap *KeepAlivePacket) Marshal(writer *PacketWriterContext) ([]byte, error) {
+	writer.AppendByte(0x1e)
+	writer.AppendInt64(kap.KeepAliveID)
+
+	if writer.Error() != nil {
+		return nil, writer.Error()
+	}
+
+	return writer.Bytes(), nil
+}
+
+func (kap *KeepAlivePacket) Unmarshal(reader *PacketReaderContext) error {
+	return nil
+}
+
+/*
+	0x11: Keep Alive Response
+*/
+
+type KeepAliveResponsePacket struct {
+	KeepAliveID int64
+}
+
+func (karp *KeepAliveResponsePacket) Marshal(writer *PacketWriterContext) ([]byte, error) {
+	return nil, nil
+}
+
+func (karp *KeepAliveResponsePacket) Unmarshal(reader *PacketReaderContext) error {
+	karp.KeepAliveID = reader.FetchInt64()
+
+	return reader.Error()
+}

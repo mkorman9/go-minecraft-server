@@ -201,6 +201,8 @@ func (pph *PlayerPacketHandler) OnPlayPacket(packetId int, packetReader *PacketR
 		return pph.OnChatCommand(packetReader)
 	case 0x04:
 		return pph.OnChatMessage(packetReader)
+	case 0x11:
+		return pph.OnKeepAliveResponse(packetReader)
 	default:
 		log.Printf("unrecognized packet id: 0x%x in play state\n", packetId)
 		return nil
@@ -479,6 +481,18 @@ func (pph *PlayerPacketHandler) OnSetCreativeSlot(packetReader *PacketReaderCont
 	return nil
 }
 
+func (pph *PlayerPacketHandler) OnKeepAliveResponse(packetReader *PacketReaderContext) error {
+	var packet KeepAliveResponsePacket
+	err := packet.Unmarshal(packetReader)
+	if err != nil {
+		return err
+	}
+
+	pph.player.OnKeepAliveResponse(packet.KeepAliveID)
+
+	return nil
+}
+
 func (pph *PlayerPacketHandler) OnChatCommand(packetReader *PacketReaderContext) error {
 	log.Println("received ChatCommand")
 
@@ -554,6 +568,10 @@ func (pph *PlayerPacketHandler) SendSystemChatMessage(message *ChatMessage) erro
 
 func (pph *PlayerPacketHandler) SynchronizePosition(x float64, y float64, z float64) error {
 	return pph.sendPositionUpdate(x, y, z)
+}
+
+func (pph *PlayerPacketHandler) SendKeepAlive(keepAliveID int64) error {
+	return pph.sendKeepAlive(keepAliveID)
 }
 
 func (pph *PlayerPacketHandler) setupEncryption() error {
@@ -702,6 +720,14 @@ func (pph *PlayerPacketHandler) sendPositionUpdate(x float64, y float64, z float
 		Flags:           0,
 		TeleportID:      0,
 		DismountVehicle: false,
+	}
+
+	return pph.writePacket(packet)
+}
+
+func (pph *PlayerPacketHandler) sendKeepAlive(keepAliveID int64) error {
+	packet := &KeepAlivePacket{
+		KeepAliveID: keepAliveID,
 	}
 
 	return pph.writePacket(packet)

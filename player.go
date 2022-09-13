@@ -21,8 +21,10 @@ type Player struct {
 	OnGround       bool
 	GameMode       GameMode
 
-	packetHandler *PlayerPacketHandler
-	world         *World
+	packetHandler   *PlayerPacketHandler
+	world           *World
+	lastKeepAliveID int64
+	lastHeartbeat   time.Time
 }
 
 type PlayerClientSettings struct {
@@ -65,9 +67,15 @@ func (p *Player) SetPosition(x, y, z float64) {
 	_ = p.packetHandler.SynchronizePosition(x, y, z)
 }
 
+func (p *Player) SendKeepAlive(keepAliveID int64) {
+	p.lastKeepAliveID = keepAliveID
+	_ = p.packetHandler.SendKeepAlive(keepAliveID)
+}
+
 func (p *Player) OnJoin(gameMode GameMode) {
 	p.world.PlayerList().RegisterPlayer(p)
 	p.GameMode = gameMode
+	p.lastHeartbeat = time.Now()
 }
 
 func (p *Player) OnClientSettings(clientSettings *PlayerClientSettings) {
@@ -103,4 +111,10 @@ func (p *Player) OnChatCommand(command string, timestamp time.Time) {
 
 func (p *Player) OnChatMessage(message string, timestamp time.Time) {
 
+}
+
+func (p *Player) OnKeepAliveResponse(keepAliveID int64) {
+	if keepAliveID == p.lastKeepAliveID {
+		p.lastHeartbeat = time.Now()
+	}
 }
