@@ -79,7 +79,7 @@ func (p *Player) SendKeepAlive(keepAliveID int64) {
 }
 
 func (p *Player) OnJoin(gameMode GameMode) {
-	p.world.PlayerList().RegisterPlayer(p)
+	p.world.JoinPlayer(p)
 	p.GameMode = gameMode
 	p.lastHeartbeat = time.Now()
 }

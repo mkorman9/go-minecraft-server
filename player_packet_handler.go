@@ -72,7 +72,7 @@ func NewPlayerPacketHandler(player *Player, world *World, connection net.Conn, i
 
 func (pph *PlayerPacketHandler) ReadLoop() {
 	defer func() {
-		pph.world.PlayerList().UnregisterPlayer(pph.player)
+		pph.world.RemovePlayer(pph.player)
 		pph.Cancel(nil)
 	}()
 

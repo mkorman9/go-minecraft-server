@@ -56,6 +56,15 @@ func (w *World) PlayerList() *PlayerList {
 	return w.playerList
 }
 
+func (w *World) JoinPlayer(player *Player) {
+	w.PlayerList().RegisterPlayer(player)
+}
+
+func (w *World) RemovePlayer(player *Player) {
+	w.PlayerList().UnregisterPlayer(player)
+	w.entityStore.RemoveID(player.EntityID)
+}
+
 func (w *World) GetStatus() *ServerStatus {
 	return &ServerStatus{
 		Version: ServerStatusVersion{

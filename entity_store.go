@@ -28,3 +28,10 @@ func (es *EntityStore) GenerateID() int32 {
 		}
 	}
 }
+
+func (es *EntityStore) RemoveID(id int32) {
+	es.m.Lock()
+	defer es.m.Unlock()
+
+	delete(es.store, id)
+}
