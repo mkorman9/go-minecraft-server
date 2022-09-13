@@ -259,7 +259,7 @@ func (scr *SetCompressionRequest) Unmarshal(reader *PacketReaderContext) error {
 }
 
 /*
-	0x19: Disconnect
+	0x17: Disconnect
 */
 
 type DisconnectPacket struct {
@@ -267,7 +267,7 @@ type DisconnectPacket struct {
 }
 
 func (dp *DisconnectPacket) Marshal(writer *PacketWriterContext) ([]byte, error) {
-	writer.AppendByte(0x19)
+	writer.AppendByte(0x17)
 	writer.AppendString(dp.Reason.Encode())
 
 	if writer.Error() != nil {

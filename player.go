@@ -48,6 +48,10 @@ func NewPlayer(world *World, ip string) *Player {
 	}
 }
 
+func (p *Player) Kick(reason *ChatMessage) {
+	p.packetHandler.Cancel(reason)
+}
+
 func (p *Player) AssignPacketHandler(packetHandler *PlayerPacketHandler) {
 	p.packetHandler = packetHandler
 }

@@ -76,7 +76,6 @@ func (pph *PlayerPacketHandler) ReadLoop() {
 	defer func() {
 		pph.world.PlayerList().UnregisterPlayer(pph.player)
 		pph.Cancel(nil)
-		_ = pph.connection.Close()
 	}()
 
 	for {
@@ -529,10 +528,6 @@ func (pph *PlayerPacketHandler) Cancel(reason *ChatMessage) {
 	pph.canceled = true
 	pph.canceledMutex.Unlock()
 
-	if reason == nil {
-		return
-	}
-
 	switch pph.state {
 	case PlayerStateBeforeHandshake:
 		// nop
@@ -543,6 +538,8 @@ func (pph *PlayerPacketHandler) Cancel(reason *ChatMessage) {
 	case PlayerStatePlay:
 		_ = pph.sendDisconnect(reason)
 	}
+
+	_ = pph.connection.Close()
 }
 
 func (pph *PlayerPacketHandler) OnJoin() error {
