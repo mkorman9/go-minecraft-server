@@ -89,3 +89,7 @@ func mojangIdToUUID(mojangId string) (*UUID, error) {
 		Lower: int64(binary.BigEndian.Uint64(lowerPartBytes)),
 	}, nil
 }
+
+func packBlockXZ(x, z byte) byte {
+	return ((x & 15) << 4) | (z & 15)
+}
