@@ -182,6 +182,13 @@ func (pwc *PacketWriterContext) AppendSlot(slot *SlotData) {
 	}
 }
 
+func (pwc *PacketWriterContext) AppendBitSet(bitSet *BitSet) {
+	pwc.AppendVarInt(len(bitSet.v))
+	for _, v := range bitSet.v {
+		pwc.AppendInt64(v)
+	}
+}
+
 func (pwc *PacketWriterContext) wrapError(err error) {
 	if err != nil {
 		pwc.err = err

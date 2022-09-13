@@ -173,3 +173,15 @@ func (prc *PacketReaderContext) FetchSlot() *SlotData {
 
 	return &slot
 }
+
+func (prc *PacketReaderContext) FetchBitSet() *BitSet {
+	length := prc.FetchVarInt()
+
+	var bitSet BitSet
+	for i := 0; i < length; i++ {
+		value := prc.FetchInt64()
+		bitSet.v = append(bitSet.v, value)
+	}
+
+	return &bitSet
+}
