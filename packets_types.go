@@ -32,3 +32,17 @@ type SlotData struct {
 	ItemCount byte
 	NBT       nbt.RawMessage
 }
+
+type EntityAction = int
+
+const (
+	EntityActionStartSneaking         = 0
+	EntityActionStopSneaking          = 1
+	EntityActionLeaveBed              = 2
+	EntityActionStartSprinting        = 3
+	EntityActionStopSprinting         = 4
+	EntityActionStartJumpWithHorse    = 5
+	EntityActionStopJumpWithHorse     = 6
+	EntityActionOpenHorseInventory    = 7
+	EntityActionStartFlyingWithElytra = 8
+)

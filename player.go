@@ -122,3 +122,7 @@ func (p *Player) OnKeepAliveResponse(keepAliveID int64) {
 		p.lastHeartbeat = time.Now()
 	}
 }
+
+func (p *Player) OnAction(entityID int, actionID EntityAction, jumpBoost int) {
+
+}

@@ -743,3 +743,25 @@ func (karp *KeepAliveResponsePacket) Unmarshal(reader *PacketReaderContext) erro
 
 	return reader.Error()
 }
+
+/*
+	0x1d: Entity Action
+*/
+
+type EntityActionPacket struct {
+	EntityID  int
+	ActionID  EntityAction
+	JumpBoost int
+}
+
+func (eap *EntityActionPacket) Marshal(writer *PacketWriterContext) ([]byte, error) {
+	return nil, nil
+}
+
+func (eap *EntityActionPacket) Unmarshal(reader *PacketReaderContext) error {
+	eap.EntityID = reader.FetchVarInt()
+	eap.ActionID = reader.FetchVarInt()
+	eap.JumpBoost = reader.FetchVarInt()
+
+	return reader.Error()
+}

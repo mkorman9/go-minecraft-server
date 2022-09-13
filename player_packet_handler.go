@@ -202,6 +202,8 @@ func (pph *PlayerPacketHandler) OnPlayPacket(packetId int, packetReader *PacketR
 		return pph.OnChatMessage(packetReader)
 	case 0x11:
 		return pph.OnKeepAliveResponse(packetReader)
+	case 0x1d:
+		return pph.OnEntityAction(packetReader)
 	default:
 		log.Printf("unrecognized packet id: 0x%x in play state\n", packetId)
 		return nil
@@ -488,6 +490,20 @@ func (pph *PlayerPacketHandler) OnKeepAliveResponse(packetReader *PacketReaderCo
 	}
 
 	pph.player.OnKeepAliveResponse(packet.KeepAliveID)
+
+	return nil
+}
+
+func (pph *PlayerPacketHandler) OnEntityAction(packetReader *PacketReaderContext) error {
+	log.Println("received EntityAction")
+
+	var packet EntityActionPacket
+	err := packet.Unmarshal(packetReader)
+	if err != nil {
+		return err
+	}
+
+	pph.player.OnAction(packet.EntityID, packet.ActionID, packet.JumpBoost)
 
 	return nil
 }
