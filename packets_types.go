@@ -2,6 +2,11 @@ package main
 
 import "github.com/mkorman9/go-minecraft-server/nbt"
 
+type Packet interface {
+	Marshal(writer *PacketWriterContext) ([]byte, error)
+	Unmarshal(reader *PacketReaderContext) error
+}
+
 type HandshakeType = int
 
 const (
