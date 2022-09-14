@@ -61,30 +61,30 @@ func (pph *PlayerPacketHandler) OnPlayPacket(packetId int, packetReader *PacketR
 	switch packetId {
 	case 0x00:
 		return pph.OnTeleportConfirm(packetReader)
+	case 0x03:
+		return pph.OnChatCommand(packetReader)
+	case 0x04:
+		return pph.OnChatMessage(packetReader)
 	case 0x07:
 		return pph.OnSettings(packetReader)
 	case 0x0c:
 		return pph.OnCustomPayload(packetReader)
+	case 0x11:
+		return pph.OnKeepAliveResponse(packetReader)
 	case 0x13:
 		return pph.OnPosition(packetReader)
 	case 0x14:
 		return pph.OnPositionLook(packetReader)
 	case 0x15:
 		return pph.OnLook(packetReader)
-	case 0x2e:
-		return pph.OnArmAnimation(packetReader)
 	case 0x1b:
 		return pph.OnAbilities(packetReader)
-	case 0x2a:
-		return pph.OnSetCreativeSlot(packetReader)
-	case 0x03:
-		return pph.OnChatCommand(packetReader)
-	case 0x04:
-		return pph.OnChatMessage(packetReader)
-	case 0x11:
-		return pph.OnKeepAliveResponse(packetReader)
 	case 0x1d:
 		return pph.OnEntityAction(packetReader)
+	case 0x2a:
+		return pph.OnSetCreativeSlot(packetReader)
+	case 0x2e:
+		return pph.OnArmAnimation(packetReader)
 	default:
 		log.Printf("unrecognized packet id: 0x%x in play state\n", packetId)
 		return nil
