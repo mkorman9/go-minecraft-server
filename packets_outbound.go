@@ -8,7 +8,7 @@ type HandshakeResponse struct {
 	StatusJSON string
 }
 
-func (hr *HandshakeResponse) Marshal(writer *PacketWriterContext) ([]byte, error) {
+func (hr *HandshakeResponse) Marshal(writer *PacketSerializer) ([]byte, error) {
 	writer.AppendByte(0x00)
 	writer.AppendString(hr.StatusJSON)
 
@@ -19,7 +19,7 @@ func (hr *HandshakeResponse) Marshal(writer *PacketWriterContext) ([]byte, error
 	return writer.Bytes(), nil
 }
 
-func (hr *HandshakeResponse) Unmarshal(reader *PacketReaderContext) error {
+func (hr *HandshakeResponse) Unmarshal(reader *PacketDeserializer) error {
 	return nil
 }
 
@@ -31,7 +31,7 @@ type PongResponse struct {
 	Payload int64
 }
 
-func (pr *PongResponse) Marshal(writer *PacketWriterContext) ([]byte, error) {
+func (pr *PongResponse) Marshal(writer *PacketSerializer) ([]byte, error) {
 	writer.AppendByte(0x01)
 	writer.AppendInt64(pr.Payload)
 
@@ -42,7 +42,7 @@ func (pr *PongResponse) Marshal(writer *PacketWriterContext) ([]byte, error) {
 	return writer.Bytes(), nil
 }
 
-func (pr *PongResponse) Unmarshal(reader *PacketReaderContext) error {
+func (pr *PongResponse) Unmarshal(reader *PacketDeserializer) error {
 	return nil
 }
 
@@ -56,7 +56,7 @@ type EncryptionRequest struct {
 	VerifyToken string
 }
 
-func (er *EncryptionRequest) Marshal(writer *PacketWriterContext) ([]byte, error) {
+func (er *EncryptionRequest) Marshal(writer *PacketSerializer) ([]byte, error) {
 	writer.AppendByte(0x01)
 	writer.AppendString(er.ServerID)
 	writer.AppendByteArray(er.PublicKey)
@@ -69,7 +69,7 @@ func (er *EncryptionRequest) Marshal(writer *PacketWriterContext) ([]byte, error
 	return writer.Bytes(), nil
 }
 
-func (er *EncryptionRequest) Unmarshal(reader *PacketReaderContext) error {
+func (er *EncryptionRequest) Unmarshal(reader *PacketDeserializer) error {
 	return nil
 }
 
@@ -81,7 +81,7 @@ type CancelLoginPacket struct {
 	Reason *ChatMessage
 }
 
-func (clp *CancelLoginPacket) Marshal(writer *PacketWriterContext) ([]byte, error) {
+func (clp *CancelLoginPacket) Marshal(writer *PacketSerializer) ([]byte, error) {
 	writer.AppendByte(0x00)
 	writer.AppendString(clp.Reason.Encode())
 
@@ -92,7 +92,7 @@ func (clp *CancelLoginPacket) Marshal(writer *PacketWriterContext) ([]byte, erro
 	return writer.Bytes(), nil
 }
 
-func (clp *CancelLoginPacket) Unmarshal(reader *PacketReaderContext) error {
+func (clp *CancelLoginPacket) Unmarshal(reader *PacketDeserializer) error {
 	return nil
 }
 
@@ -113,7 +113,7 @@ type LoginSuccessResponseProperty struct {
 	Signature string
 }
 
-func (lsr *LoginSuccessResponse) Marshal(writer *PacketWriterContext) ([]byte, error) {
+func (lsr *LoginSuccessResponse) Marshal(writer *PacketSerializer) ([]byte, error) {
 	writer.AppendByte(0x02)
 	writer.AppendUUID(lsr.UUID)
 	writer.AppendString(lsr.Username)
@@ -136,7 +136,7 @@ func (lsr *LoginSuccessResponse) Marshal(writer *PacketWriterContext) ([]byte, e
 	return writer.Bytes(), nil
 }
 
-func (lsr *LoginSuccessResponse) Unmarshal(reader *PacketReaderContext) error {
+func (lsr *LoginSuccessResponse) Unmarshal(reader *PacketDeserializer) error {
 	return nil
 }
 
@@ -148,7 +148,7 @@ type SetCompressionRequest struct {
 	Threshold int
 }
 
-func (scr *SetCompressionRequest) Marshal(writer *PacketWriterContext) ([]byte, error) {
+func (scr *SetCompressionRequest) Marshal(writer *PacketSerializer) ([]byte, error) {
 	writer.AppendByte(0x03)
 	writer.AppendVarInt(scr.Threshold)
 
@@ -159,7 +159,7 @@ func (scr *SetCompressionRequest) Marshal(writer *PacketWriterContext) ([]byte, 
 	return writer.Bytes(), nil
 }
 
-func (scr *SetCompressionRequest) Unmarshal(reader *PacketReaderContext) error {
+func (scr *SetCompressionRequest) Unmarshal(reader *PacketDeserializer) error {
 	return nil
 }
 
@@ -188,7 +188,7 @@ type PlayPacket struct {
 	DeathLocation       *Position
 }
 
-func (pp *PlayPacket) Marshal(writer *PacketWriterContext) ([]byte, error) {
+func (pp *PlayPacket) Marshal(writer *PacketSerializer) ([]byte, error) {
 	writer.AppendByte(0x23)
 	writer.AppendInt32(pp.EntityID)
 	writer.AppendBool(pp.IsHardcore)
@@ -227,7 +227,7 @@ func (pp *PlayPacket) Marshal(writer *PacketWriterContext) ([]byte, error) {
 	return writer.Bytes(), nil
 }
 
-func (pp *PlayPacket) Unmarshal(reader *PacketReaderContext) error {
+func (pp *PlayPacket) Unmarshal(reader *PacketDeserializer) error {
 	return nil
 }
 
@@ -240,7 +240,7 @@ type SpawnPositionPacket struct {
 	Angle    float32
 }
 
-func (spp *SpawnPositionPacket) Marshal(writer *PacketWriterContext) ([]byte, error) {
+func (spp *SpawnPositionPacket) Marshal(writer *PacketSerializer) ([]byte, error) {
 	writer.AppendByte(0x4a)
 	writer.AppendPosition(spp.Location)
 	writer.AppendFloat32(spp.Angle)
@@ -252,7 +252,7 @@ func (spp *SpawnPositionPacket) Marshal(writer *PacketWriterContext) ([]byte, er
 	return writer.Bytes(), nil
 }
 
-func (spp *SpawnPositionPacket) Unmarshal(reader *PacketReaderContext) error {
+func (spp *SpawnPositionPacket) Unmarshal(reader *PacketDeserializer) error {
 	return nil
 }
 
@@ -264,7 +264,7 @@ type DisconnectPacket struct {
 	Reason *ChatMessage
 }
 
-func (dp *DisconnectPacket) Marshal(writer *PacketWriterContext) ([]byte, error) {
+func (dp *DisconnectPacket) Marshal(writer *PacketSerializer) ([]byte, error) {
 	writer.AppendByte(0x17)
 	writer.AppendString(dp.Reason.Encode())
 
@@ -275,7 +275,7 @@ func (dp *DisconnectPacket) Marshal(writer *PacketWriterContext) ([]byte, error)
 	return writer.Bytes(), nil
 }
 
-func (dp *DisconnectPacket) Unmarshal(reader *PacketReaderContext) error {
+func (dp *DisconnectPacket) Unmarshal(reader *PacketDeserializer) error {
 	return nil
 }
 
@@ -287,7 +287,7 @@ type KeepAlivePacket struct {
 	KeepAliveID int64
 }
 
-func (kap *KeepAlivePacket) Marshal(writer *PacketWriterContext) ([]byte, error) {
+func (kap *KeepAlivePacket) Marshal(writer *PacketSerializer) ([]byte, error) {
 	writer.AppendByte(0x1e)
 	writer.AppendInt64(kap.KeepAliveID)
 
@@ -298,7 +298,7 @@ func (kap *KeepAlivePacket) Marshal(writer *PacketWriterContext) ([]byte, error)
 	return writer.Bytes(), nil
 }
 
-func (kap *KeepAlivePacket) Unmarshal(reader *PacketReaderContext) error {
+func (kap *KeepAlivePacket) Unmarshal(reader *PacketDeserializer) error {
 	return nil
 }
 
@@ -311,7 +311,7 @@ type SystemChatPacket struct {
 	Type    SystemChatMessageType
 }
 
-func (scp *SystemChatPacket) Marshal(writer *PacketWriterContext) ([]byte, error) {
+func (scp *SystemChatPacket) Marshal(writer *PacketSerializer) ([]byte, error) {
 	writer.AppendByte(0x5f)
 	writer.AppendString(scp.Content.Encode())
 	writer.AppendVarInt(scp.Type)
@@ -323,7 +323,7 @@ func (scp *SystemChatPacket) Marshal(writer *PacketWriterContext) ([]byte, error
 	return writer.Bytes(), nil
 }
 
-func (scp *SystemChatPacket) Unmarshal(reader *PacketReaderContext) error {
+func (scp *SystemChatPacket) Unmarshal(reader *PacketDeserializer) error {
 	return nil
 }
 
@@ -342,7 +342,7 @@ type UpdatePositionPacket struct {
 	DismountVehicle bool
 }
 
-func (upp *UpdatePositionPacket) Marshal(writer *PacketWriterContext) ([]byte, error) {
+func (upp *UpdatePositionPacket) Marshal(writer *PacketSerializer) ([]byte, error) {
 	writer.AppendByte(0x36)
 	writer.AppendFloat64(upp.X)
 	writer.AppendFloat64(upp.Y)
@@ -360,7 +360,7 @@ func (upp *UpdatePositionPacket) Marshal(writer *PacketWriterContext) ([]byte, e
 	return writer.Bytes(), nil
 }
 
-func (upp *UpdatePositionPacket) Unmarshal(reader *PacketReaderContext) error {
+func (upp *UpdatePositionPacket) Unmarshal(reader *PacketDeserializer) error {
 	return nil
 }
 
@@ -381,7 +381,7 @@ type MapChunkPacket struct {
 	EmptyBlockLightMask *BitSet
 }
 
-func (mcp *MapChunkPacket) Marshal(writer *PacketWriterContext) ([]byte, error) {
+func (mcp *MapChunkPacket) Marshal(writer *PacketSerializer) ([]byte, error) {
 	skyLightMaskBits := mcp.SkyLightMask.BitsSet()
 	blockLightMaskBits := mcp.BlockLightMask.BitsSet()
 
@@ -467,6 +467,6 @@ func (mcp *MapChunkPacket) Marshal(writer *PacketWriterContext) ([]byte, error) 
 	return writer.Bytes(), nil
 }
 
-func (mcp *MapChunkPacket) Unmarshal(reader *PacketReaderContext) error {
+func (mcp *MapChunkPacket) Unmarshal(reader *PacketDeserializer) error {
 	return nil
 }

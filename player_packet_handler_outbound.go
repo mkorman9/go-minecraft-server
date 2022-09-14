@@ -167,7 +167,7 @@ func (pph *PlayerPacketHandler) sendKeepAlive(keepAliveID int64) error {
 }
 
 func (pph *PlayerPacketHandler) writePacket(packet Packet) error {
-	data, err := packet.Marshal(pph.packetWriter.New())
+	data, err := packet.Marshal(NewPackerSerializer(pph.enabledCompressionThreshold))
 	if err != nil {
 		log.Printf("%v\n", err)
 		return err

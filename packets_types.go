@@ -3,8 +3,8 @@ package main
 import "github.com/mkorman9/go-minecraft-server/nbt"
 
 type Packet interface {
-	Marshal(writer *PacketWriterContext) ([]byte, error)
-	Unmarshal(reader *PacketReaderContext) error
+	Marshal(writer *PacketSerializer) ([]byte, error)
+	Unmarshal(reader *PacketDeserializer) error
 }
 
 type HandshakeType = int

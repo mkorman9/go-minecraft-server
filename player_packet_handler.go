@@ -36,13 +36,12 @@ func (phe *PacketHandlingError) Error() string {
 }
 
 type PlayerPacketHandler struct {
-	player       *Player
-	world        *World
-	connection   net.Conn
-	state        PlayerState
-	reader       io.Reader
-	writer       io.Writer
-	packetWriter *PacketWriter
+	player     *Player
+	world      *World
+	connection net.Conn
+	state      PlayerState
+	reader     io.Reader
+	writer     io.Writer
 
 	ip                          string
 	verifyToken                 string
@@ -62,7 +61,6 @@ func NewPlayerPacketHandler(player *Player, world *World, connection net.Conn, i
 		state:                       PlayerStateBeforeHandshake,
 		reader:                      connection,
 		writer:                      connection,
-		packetWriter:                NewPacketWriter(),
 		ip:                          ip,
 		enabledCompressionThreshold: -1,
 		canceled:                    false,
@@ -145,7 +143,6 @@ func (pph *PlayerPacketHandler) setupCompression() error {
 			return err
 		}
 
-		pph.packetWriter.EnableCompression(compressionThreshold)
 		pph.enabledCompressionThreshold = compressionThreshold
 	}
 

@@ -11,11 +11,11 @@ type HandshakeRequest struct {
 	NextState       HandshakeType
 }
 
-func (hr *HandshakeRequest) Marshal(ctx *PacketWriterContext) ([]byte, error) {
+func (hr *HandshakeRequest) Marshal(ctx *PacketSerializer) ([]byte, error) {
 	return nil, nil
 }
 
-func (hr *HandshakeRequest) Unmarshal(reader *PacketReaderContext) error {
+func (hr *HandshakeRequest) Unmarshal(reader *PacketDeserializer) error {
 	hr.ProtocolVersion = reader.FetchVarInt()
 	hr.ServerAddress = reader.FetchString()
 	hr.ServerPort = reader.FetchInt16()
@@ -32,11 +32,11 @@ type PingRequest struct {
 	Payload int64
 }
 
-func (pr *PingRequest) Marshal(writer *PacketWriterContext) ([]byte, error) {
+func (pr *PingRequest) Marshal(writer *PacketSerializer) ([]byte, error) {
 	return nil, nil
 }
 
-func (pr *PingRequest) Unmarshal(reader *PacketReaderContext) error {
+func (pr *PingRequest) Unmarshal(reader *PacketDeserializer) error {
 	pr.Payload = reader.FetchInt64()
 	return reader.Error()
 }
@@ -52,11 +52,11 @@ type LoginStartRequest struct {
 	Signature []byte
 }
 
-func (lsr *LoginStartRequest) Marshal(writer *PacketWriterContext) ([]byte, error) {
+func (lsr *LoginStartRequest) Marshal(writer *PacketSerializer) ([]byte, error) {
 	return nil, nil
 }
 
-func (lsr *LoginStartRequest) Unmarshal(reader *PacketReaderContext) error {
+func (lsr *LoginStartRequest) Unmarshal(reader *PacketDeserializer) error {
 	lsr.Name = reader.FetchString()
 	hasSigData := reader.FetchBool()
 
@@ -80,11 +80,11 @@ type EncryptionResponse struct {
 	MessageSignature []byte
 }
 
-func (er *EncryptionResponse) Marshal(writer *PacketWriterContext) ([]byte, error) {
+func (er *EncryptionResponse) Marshal(writer *PacketSerializer) ([]byte, error) {
 	return nil, nil
 }
 
-func (er *EncryptionResponse) Unmarshal(reader *PacketReaderContext) error {
+func (er *EncryptionResponse) Unmarshal(reader *PacketDeserializer) error {
 	er.SharedSecret = reader.FetchByteArray()
 	hasVerifyToken := reader.FetchBool()
 
@@ -113,11 +113,11 @@ type SettingsPacket struct {
 	EnableServerListing bool
 }
 
-func (sp *SettingsPacket) Marshal(writer *PacketWriterContext) ([]byte, error) {
+func (sp *SettingsPacket) Marshal(writer *PacketSerializer) ([]byte, error) {
 	return nil, nil
 }
 
-func (sp *SettingsPacket) Unmarshal(reader *PacketReaderContext) error {
+func (sp *SettingsPacket) Unmarshal(reader *PacketDeserializer) error {
 	sp.Locale = reader.FetchString()
 	sp.ViewDistance = reader.FetchByte()
 	sp.ChatFlags = reader.FetchVarInt()
@@ -139,11 +139,11 @@ type CustomPayloadPacket struct {
 	Data    []byte
 }
 
-func (cpp *CustomPayloadPacket) Marshal(writer *PacketWriterContext) ([]byte, error) {
+func (cpp *CustomPayloadPacket) Marshal(writer *PacketSerializer) ([]byte, error) {
 	return nil, nil
 }
 
-func (cpp *CustomPayloadPacket) Unmarshal(reader *PacketReaderContext) error {
+func (cpp *CustomPayloadPacket) Unmarshal(reader *PacketDeserializer) error {
 	cpp.Channel = reader.FetchString()
 	cpp.Data = reader.FetchByteArray()
 
@@ -161,11 +161,11 @@ type PositionPacket struct {
 	OnGround bool
 }
 
-func (pp *PositionPacket) Marshal(writer *PacketWriterContext) ([]byte, error) {
+func (pp *PositionPacket) Marshal(writer *PacketSerializer) ([]byte, error) {
 	return nil, nil
 }
 
-func (pp *PositionPacket) Unmarshal(reader *PacketReaderContext) error {
+func (pp *PositionPacket) Unmarshal(reader *PacketDeserializer) error {
 	pp.X = reader.FetchFloat64()
 	pp.Y = reader.FetchFloat64()
 	pp.Z = reader.FetchFloat64()
@@ -187,11 +187,11 @@ type PositionLookPacket struct {
 	OnGround bool
 }
 
-func (plp *PositionLookPacket) Marshal(writer *PacketWriterContext) ([]byte, error) {
+func (plp *PositionLookPacket) Marshal(writer *PacketSerializer) ([]byte, error) {
 	return nil, nil
 }
 
-func (plp *PositionLookPacket) Unmarshal(reader *PacketReaderContext) error {
+func (plp *PositionLookPacket) Unmarshal(reader *PacketDeserializer) error {
 	plp.X = reader.FetchFloat64()
 	plp.Y = reader.FetchFloat64()
 	plp.Z = reader.FetchFloat64()
@@ -212,11 +212,11 @@ type LookPacket struct {
 	OnGround bool
 }
 
-func (lp *LookPacket) Marshal(writer *PacketWriterContext) ([]byte, error) {
+func (lp *LookPacket) Marshal(writer *PacketSerializer) ([]byte, error) {
 	return nil, nil
 }
 
-func (lp *LookPacket) Unmarshal(reader *PacketReaderContext) error {
+func (lp *LookPacket) Unmarshal(reader *PacketDeserializer) error {
 	lp.Yaw = reader.FetchFloat32()
 	lp.Pitch = reader.FetchFloat32()
 	lp.OnGround = reader.FetchBool()
@@ -232,11 +232,11 @@ type ArmAnimationPacket struct {
 	Hand int
 }
 
-func (aap *ArmAnimationPacket) Marshal(writer *PacketWriterContext) ([]byte, error) {
+func (aap *ArmAnimationPacket) Marshal(writer *PacketSerializer) ([]byte, error) {
 	return nil, nil
 }
 
-func (aap *ArmAnimationPacket) Unmarshal(reader *PacketReaderContext) error {
+func (aap *ArmAnimationPacket) Unmarshal(reader *PacketDeserializer) error {
 	aap.Hand = reader.FetchVarInt()
 
 	return reader.Error()
@@ -250,11 +250,11 @@ type AbilitiesPacket struct {
 	Flags byte
 }
 
-func (ap *AbilitiesPacket) Marshal(writer *PacketWriterContext) ([]byte, error) {
+func (ap *AbilitiesPacket) Marshal(writer *PacketSerializer) ([]byte, error) {
 	return nil, nil
 }
 
-func (ap *AbilitiesPacket) Unmarshal(reader *PacketReaderContext) error {
+func (ap *AbilitiesPacket) Unmarshal(reader *PacketDeserializer) error {
 	ap.Flags = reader.FetchByte()
 
 	return reader.Error()
@@ -269,11 +269,11 @@ type SetCreativeSlotPacket struct {
 	Item SlotData
 }
 
-func (scsp *SetCreativeSlotPacket) Marshal(writer *PacketWriterContext) ([]byte, error) {
+func (scsp *SetCreativeSlotPacket) Marshal(writer *PacketSerializer) ([]byte, error) {
 	return nil, nil
 }
 
-func (scsp *SetCreativeSlotPacket) Unmarshal(reader *PacketReaderContext) error {
+func (scsp *SetCreativeSlotPacket) Unmarshal(reader *PacketDeserializer) error {
 	scsp.Slot = reader.FetchInt16()
 	scsp.Item = *reader.FetchSlot()
 
@@ -292,11 +292,11 @@ type ChatMessagePacket struct {
 	SignedPreview bool
 }
 
-func (cmp *ChatMessagePacket) Marshal(writer *PacketWriterContext) ([]byte, error) {
+func (cmp *ChatMessagePacket) Marshal(writer *PacketSerializer) ([]byte, error) {
 	return nil, nil
 }
 
-func (cmp *ChatMessagePacket) Unmarshal(reader *PacketReaderContext) error {
+func (cmp *ChatMessagePacket) Unmarshal(reader *PacketDeserializer) error {
 	cmp.Message = reader.FetchString()
 	cmp.Timestamp = reader.FetchInt64()
 	cmp.Salt = reader.FetchInt64()
@@ -323,11 +323,11 @@ type ChatCommandPacketArgument struct {
 	Signature    []byte
 }
 
-func (ccp *ChatCommandPacket) Marshal(writer *PacketWriterContext) ([]byte, error) {
+func (ccp *ChatCommandPacket) Marshal(writer *PacketSerializer) ([]byte, error) {
 	return nil, nil
 }
 
-func (ccp *ChatCommandPacket) Unmarshal(reader *PacketReaderContext) error {
+func (ccp *ChatCommandPacket) Unmarshal(reader *PacketDeserializer) error {
 	ccp.Message = reader.FetchString()
 	ccp.Timestamp = reader.FetchInt64()
 	ccp.Salt = reader.FetchInt64()
@@ -355,11 +355,11 @@ type TeleportConfirmPacket struct {
 	TeleportID int
 }
 
-func (tcp *TeleportConfirmPacket) Marshal(writer *PacketWriterContext) ([]byte, error) {
+func (tcp *TeleportConfirmPacket) Marshal(writer *PacketSerializer) ([]byte, error) {
 	return nil, nil
 }
 
-func (tcp *TeleportConfirmPacket) Unmarshal(reader *PacketReaderContext) error {
+func (tcp *TeleportConfirmPacket) Unmarshal(reader *PacketDeserializer) error {
 	tcp.TeleportID = reader.FetchVarInt()
 
 	return reader.Error()
@@ -373,11 +373,11 @@ type KeepAliveResponsePacket struct {
 	KeepAliveID int64
 }
 
-func (karp *KeepAliveResponsePacket) Marshal(writer *PacketWriterContext) ([]byte, error) {
+func (karp *KeepAliveResponsePacket) Marshal(writer *PacketSerializer) ([]byte, error) {
 	return nil, nil
 }
 
-func (karp *KeepAliveResponsePacket) Unmarshal(reader *PacketReaderContext) error {
+func (karp *KeepAliveResponsePacket) Unmarshal(reader *PacketDeserializer) error {
 	karp.KeepAliveID = reader.FetchInt64()
 
 	return reader.Error()
@@ -393,11 +393,11 @@ type EntityActionPacket struct {
 	JumpBoost int
 }
 
-func (eap *EntityActionPacket) Marshal(writer *PacketWriterContext) ([]byte, error) {
+func (eap *EntityActionPacket) Marshal(writer *PacketSerializer) ([]byte, error) {
 	return nil, nil
 }
 
-func (eap *EntityActionPacket) Unmarshal(reader *PacketReaderContext) error {
+func (eap *EntityActionPacket) Unmarshal(reader *PacketDeserializer) error {
 	eap.EntityID = reader.FetchVarInt()
 	eap.ActionID = reader.FetchVarInt()
 	eap.JumpBoost = reader.FetchVarInt()

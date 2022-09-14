@@ -15,18 +15,18 @@ import (
 )
 
 func getVarIntSize(value int) int {
-	tmp := &PacketWriterContext{buffer: bytes.NewBuffer(make([]byte, 0))}
+	tmp := &PacketSerializer{buffer: bytes.NewBuffer(make([]byte, 0))}
 	tmp.AppendVarInt(value)
 	return tmp.buffer.Len()
 }
 
 func getSecureRandomString(lengthBytes int) (string, error) {
-	var bytes = make([]byte, lengthBytes)
-	if _, err := rand.Read(bytes); err != nil {
+	var buff = make([]byte, lengthBytes)
+	if _, err := rand.Read(buff); err != nil {
 		return "", err
 	}
 
-	return hex.EncodeToString(bytes), nil
+	return hex.EncodeToString(buff), nil
 }
 
 func getRandomUUID() UUID {
