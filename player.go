@@ -29,10 +29,11 @@ type Player struct {
 	TexturesSignature string
 	Ping              int
 
-	packetHandler   *PlayerPacketHandler
-	world           *World
-	lastKeepAliveID int64
-	lastHeartbeat   time.Time
+	packetHandler     *PlayerPacketHandler
+	world             *World
+	lastKeepAliveID   int64
+	lastHeartbeat     time.Time
+	lastHeartbeatSent time.Time
 }
 
 type PlayerClientSettings struct {
@@ -83,6 +84,7 @@ func (p *Player) SetPosition(x, y, z float64) {
 
 func (p *Player) SendKeepAlive(keepAliveID int64) {
 	p.lastKeepAliveID = keepAliveID
+	p.lastHeartbeatSent = time.Now()
 	_ = p.packetHandler.SendKeepAlive(keepAliveID)
 }
 
@@ -130,6 +132,9 @@ func (p *Player) OnChatMessage(message string, timestamp time.Time) {
 func (p *Player) OnKeepAliveResponse(keepAliveID int64) {
 	if keepAliveID == p.lastKeepAliveID {
 		p.lastHeartbeat = time.Now()
+
+		ping := time.Now().Sub(p.lastHeartbeatSent)
+		p.Ping = int(ping / time.Millisecond)
 	}
 }
 
