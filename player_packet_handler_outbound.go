@@ -192,9 +192,9 @@ func (pph *PlayerPacketHandler) sendPlayerListUpdate(players []*Player) error {
 				if player.Textures != "" {
 					properties = append(properties, SignedProperties{
 						Name:      "textures",
-						Value:     player.TexturesSignature,
+						Value:     player.Textures,
 						IsSigned:  true,
-						Signature: player.Signature,
+						Signature: player.TexturesSignature,
 					})
 				}
 
