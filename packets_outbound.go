@@ -54,7 +54,7 @@ var LoginSuccessResponse = packets.Packet(
 		packets.String("name"),
 		packets.String("value"),
 		packets.Bool("isSigned"),
-		packets.ByteArray("signature", packets.OnlyIfTrue("isSigned")),
+		packets.String("signature", packets.OnlyIfTrue("isSigned")),
 	),
 )
 

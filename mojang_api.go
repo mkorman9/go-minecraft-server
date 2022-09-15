@@ -9,8 +9,10 @@ import (
 )
 
 type MojangPlayerVerification struct {
-	Verified bool
-	UUID     *packets.UUID
+	Verified          bool
+	UUID              *packets.UUID
+	Textures          string
+	TexturesSignature string
 }
 
 type mojangVerifyPlayerResponse struct {
@@ -42,11 +44,13 @@ func MojangVerifyPlayer(username, hash string) (*MojangPlayerVerification, error
 		return nil, err
 	}
 
-	// introduce retry on 204
 	response, err := client.Do(request)
 	if err != nil {
 		return nil, err
 	}
+	defer func() {
+		_ = response.Body.Close()
+	}()
 
 	if response.StatusCode != http.StatusOK {
 		return &MojangPlayerVerification{Verified: false}, nil
@@ -67,5 +71,19 @@ func MojangVerifyPlayer(username, hash string) (*MojangPlayerVerification, error
 		return nil, err
 	}
 
-	return &MojangPlayerVerification{Verified: true, UUID: uuid}, nil
+	var textures string
+	var texturesSignature string
+	for _, property := range mojangResponse.Properties {
+		if property.Name == "textures" {
+			textures = property.Value
+			texturesSignature = property.Signature
+		}
+	}
+
+	return &MojangPlayerVerification{
+		Verified:          true,
+		UUID:              uuid,
+		Textures:          textures,
+		TexturesSignature: texturesSignature,
+	}, nil
 }

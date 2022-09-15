@@ -6,8 +6,9 @@ import (
 	"crypto/rsa"
 	"crypto/sha1"
 	"crypto/x509"
-	"encoding/hex"
+	"fmt"
 	"net"
+	"strings"
 )
 
 type Server struct {
@@ -71,9 +72,22 @@ func (s *Server) DecryptMessage(message []byte) ([]byte, error) {
 
 func (s *Server) GenerateServerHash(sharedSecret []byte) string {
 	hash := sha1.New()
+	hash.Write([]byte{})
 	hash.Write(sharedSecret)
 	hash.Write(s.key.publicDER)
-	return hex.EncodeToString(hash.Sum(nil))
+	digest := hash.Sum(nil)
+
+	negative := (digest[0] & 0x80) == 0x80
+	if negative {
+		digest = twosComplement(digest)
+	}
+
+	result := strings.TrimLeft(fmt.Sprintf("%x", digest), "0")
+	if negative {
+		result = "-" + result
+	}
+
+	return result
 }
 
 type serverKey struct {
@@ -90,7 +104,7 @@ func generateServerKey() (*serverKey, error) {
 
 	public := key.Public()
 
-	publicASN1, err := x509.MarshalPKIXPublicKey(public)
+	publicDER, err := x509.MarshalPKIXPublicKey(public)
 	if err != nil {
 		return nil, err
 	}
@@ -98,6 +112,18 @@ func generateServerKey() (*serverKey, error) {
 	return &serverKey{
 		private:   key,
 		public:    &public,
-		publicDER: publicASN1,
+		publicDER: publicDER,
 	}, nil
+}
+
+func twosComplement(p []byte) []byte {
+	carry := true
+	for i := len(p) - 1; i >= 0; i-- {
+		p[i] = ^p[i]
+		if carry {
+			carry = p[i] == 0xff
+			p[i]++
+		}
+	}
+	return p
 }

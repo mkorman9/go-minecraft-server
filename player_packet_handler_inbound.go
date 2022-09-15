@@ -211,6 +211,19 @@ func (pph *PlayerPacketHandler) OnEncryptionResponse(packetReader io.Reader) err
 		}
 	}
 
+	verificationResult, err := MojangVerifyPlayer(pph.player.Name, pph.serverHash)
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	if !verificationResult.Verified {
+		if err != nil {
+			return NewPacketHandlingError(err, NewChatMessage("Username verification failed"))
+		}
+	}
+
+	pph.player.UUID = *verificationResult.UUID
+
 	err = pph.setupEncryption()
 	if err != nil {
 		return err
