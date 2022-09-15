@@ -460,13 +460,13 @@ func (pph *PlayerPacketHandler) OnJoin() error {
 		return err
 	}
 
-	err = pph.sendPlayersAdded([]*Player{pph.player})
+	pph.state = PlayerStatePlay
+	pph.player.OnJoin(GameModeSurvival)
+
+	err = pph.sendPlayersAdded(pph.world.PlayerList().Copy())
 	if err != nil {
 		return err
 	}
-
-	pph.state = PlayerStatePlay
-	pph.player.OnJoin(GameModeSurvival)
 
 	return nil
 }

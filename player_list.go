@@ -70,3 +70,10 @@ func (pl *PlayerList) ByName(name string, handler func(*Player)) (found bool) {
 
 	return
 }
+
+func (pl *PlayerList) Copy() []*Player {
+	pl.m.RLock()
+	defer pl.m.RUnlock()
+
+	return pl.list[:]
+}
