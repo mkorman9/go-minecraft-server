@@ -164,7 +164,7 @@ var ChatCommandPacket = packets.Packet(
 	packets.Int64("salt"),
 	packets.Array(
 		"arguments",
-		packets.ArrayLengthAppend,
+		packets.ArrayLengthPrefixed,
 		packets.String("name"),
 		packets.ByteArray("signature"),
 	),

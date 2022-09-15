@@ -50,7 +50,7 @@ var LoginSuccessResponse = packets.Packet(
 	packets.String("username"),
 	packets.Array(
 		"properties",
-		packets.ArrayLengthAppend,
+		packets.ArrayLengthPrefixed,
 		packets.String("name"),
 		packets.String("value"),
 		packets.Bool("isSigned"),
@@ -79,7 +79,7 @@ var PlayPacket = packets.Packet(
 	packets.Byte("previousGameMode"),
 	packets.Array(
 		"worldNames",
-		packets.ArrayLengthAppend,
+		packets.ArrayLengthPrefixed,
 		packets.String("value"),
 	),
 	packets.NBT("dimensionCodec", &DimensionCodec{}),

@@ -25,8 +25,8 @@ func NewCipherStream(key []byte) (*CipherStream, error) {
 		return nil, err
 	}
 
-	encrypter := &CFB8{block: block, key: key, tmp: make([]byte, block.BlockSize()), encryptMode: true}
-	decrypter := &CFB8{block: block, key: key, tmp: make([]byte, block.BlockSize()), encryptMode: false}
+	encrypter := &CFB8{block: block, key: key[:], tmp: make([]byte, block.BlockSize()), encryptMode: true}
+	decrypter := &CFB8{block: block, key: key[:], tmp: make([]byte, block.BlockSize()), encryptMode: false}
 
 	return &CipherStream{
 		block:     block,
@@ -54,6 +54,7 @@ func (c *CFB8) XORKeyStream(dst, src []byte) {
 		val := src[i]
 		copy(c.tmp, c.key)
 		c.block.Encrypt(c.key, c.key)
+
 		val = val ^ c.key[0]
 
 		copy(c.key, c.tmp[1:])

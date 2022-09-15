@@ -51,7 +51,7 @@ func (pd *PacketData) WriteTo(writer io.Writer) (int64, error) {
 		switch field.Type {
 		case TypeArray:
 			if field.Value == nil {
-				if field.ArrayLengthOption == ArrayLengthAppend {
+				if field.ArrayLengthOption == ArrayLengthPrefixed {
 					err := writeVarInt(writer, 0)
 					if err != nil {
 						return 0, err
@@ -63,7 +63,7 @@ func (pd *PacketData) WriteTo(writer io.Writer) (int64, error) {
 
 			array := field.Value.(ArrayValue)
 
-			if field.ArrayLengthOption == ArrayLengthAppend {
+			if field.ArrayLengthOption == ArrayLengthPrefixed {
 				err := writeVarInt(writer, len(array))
 				if err != nil {
 					return 0, err

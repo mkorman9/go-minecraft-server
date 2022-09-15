@@ -4,7 +4,7 @@ type ArrayLengthOption = int
 
 const (
 	ArrayLengthStatic = iota
-	ArrayLengthAppend
+	ArrayLengthPrefixed
 )
 
 type PacketOpt = func(*PacketDefinition)

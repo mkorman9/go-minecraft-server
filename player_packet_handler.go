@@ -109,7 +109,7 @@ func (pph *PlayerPacketHandler) setupEncryption() error {
 		return err
 	}
 
-	pph.reader = cipherStream.WrapReader(pph.reader)
+	pph.reader = cipherStream.WrapReader(pph.connection)
 	pph.packetWriter.SetWriter(cipherStream.WrapWriter(pph.connection))
 
 	return nil
