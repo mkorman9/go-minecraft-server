@@ -125,6 +125,9 @@ func (pph *PlayerPacketHandler) setupCompression() error {
 		}
 
 		pph.enabledCompressionThreshold = compressionThreshold
+
+		pph.packetReader.SetCompression(compressionThreshold)
+		pph.packetWriter.SetCompression(compressionThreshold)
 	}
 
 	return nil
