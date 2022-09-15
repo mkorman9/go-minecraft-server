@@ -178,7 +178,7 @@ func (pph *PlayerPacketHandler) sendKeepAlive(keepAliveID int64) error {
 	return pph.packetWriter.Write(keepAlivePacket)
 }
 
-func (pph *PlayerPacketHandler) sendPlayerListUpdate(players []*Player) error {
+func (pph *PlayerPacketHandler) sendPlayersAdded(players []*Player) error {
 	playerInfoPacket := PlayerInfoPacket.
 		New().
 		Set("actionId", 0).

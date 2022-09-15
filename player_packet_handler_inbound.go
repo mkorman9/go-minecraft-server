@@ -460,7 +460,7 @@ func (pph *PlayerPacketHandler) OnJoin() error {
 		return err
 	}
 
-	err = pph.sendPlayerListUpdate([]*Player{pph.player})
+	err = pph.sendPlayersAdded([]*Player{pph.player})
 	if err != nil {
 		return err
 	}
