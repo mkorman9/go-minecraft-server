@@ -6,7 +6,7 @@ type Settings struct {
 	MaxPlayers           int    `json:"maxPlayers"`
 	OnlineMode           bool   `json:"onlineMode"`
 	CompressionThreshold int    `json:"compressionThreshold"`
-	IsDebug              bool
-	ViewDistance         int
-	SimulationDistance   int
+	IsDebug              bool   `json:"isDebug"`
+	ViewDistance         int    `json:"viewDistance"`
+	SimulationDistance   int    `json:"simulationDistance"`
 }
