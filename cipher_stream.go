@@ -25,8 +25,13 @@ func NewCipherStream(key []byte) (*CipherStream, error) {
 		return nil, err
 	}
 
-	encrypter := &CFB8{block: block, key: key[:], tmp: make([]byte, block.BlockSize()), encryptMode: true}
-	decrypter := &CFB8{block: block, key: key[:], tmp: make([]byte, block.BlockSize()), encryptMode: false}
+	keyCopy := make([]byte, len(key))
+	copy(keyCopy, key)
+	encrypter := &CFB8{block: block, key: keyCopy, tmp: make([]byte, block.BlockSize()), encryptMode: true}
+
+	keyCopy = make([]byte, len(key))
+	copy(keyCopy, key)
+	decrypter := &CFB8{block: block, key: keyCopy, tmp: make([]byte, block.BlockSize()), encryptMode: false}
 
 	return &CipherStream{
 		block:     block,
