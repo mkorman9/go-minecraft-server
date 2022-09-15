@@ -1,19 +1,21 @@
 package packets
 
 import (
+	"errors"
 	"io"
 )
 
 type PacketDefinition struct {
 	PacketID int
-	Fields   []Field
+	Fields   []*Field
 
 	namesMapping map[string]int
 }
 
 func Packet(opts ...PacketOpt) *PacketDefinition {
 	packet := PacketDefinition{
-		PacketID: -1,
+		PacketID:     -1,
+		namesMapping: make(map[string]int),
 	}
 
 	for _, opt := range opts {
@@ -24,7 +26,7 @@ func Packet(opts ...PacketOpt) *PacketDefinition {
 }
 
 func (pd *PacketDefinition) AddField(name string, fieldType int) {
-	pd.Fields = append(pd.Fields, Field{Type: fieldType})
+	pd.Fields = append(pd.Fields, &Field{Type: fieldType})
 	pd.namesMapping[name] = len(pd.Fields) - 1
 }
 
@@ -42,11 +44,21 @@ func (pd *PacketDefinition) New() *PacketData {
 	}
 }
 
-func (pd *PacketDefinition) Read(reader io.Reader) (PacketData, error) {
+func (pd *PacketDefinition) Read(reader io.Reader) (*PacketData, error) {
 	packet := pd.New()
 
 	for _, field := range packet.Fields {
 		var err error
+
+		cancelField := false
+		for _, opt := range field.FieldOptions {
+			if !opt(packet) {
+				cancelField = true
+			}
+		}
+		if cancelField {
+			continue
+		}
 
 		switch field.Type {
 		case TypeArray:
@@ -54,7 +66,7 @@ func (pd *PacketDefinition) Read(reader io.Reader) (PacketData, error) {
 			if field.ArrayLengthOption == ArrayLengthAppend {
 				length, err = readVarInt(reader)
 				if err != nil {
-					return PacketData{}, err
+					return nil, err
 				}
 			}
 
@@ -62,10 +74,10 @@ func (pd *PacketDefinition) Read(reader io.Reader) (PacketData, error) {
 			for i := 0; i < length; i++ {
 				element, err := field.ArrayElementDefinition.Read(reader)
 				if err != nil {
-					return PacketData{}, err
+					return nil, err
 				}
 
-				elements[i] = element
+				elements[i] = *element
 			}
 			field.Value = elements
 		case TypeByte:
@@ -135,16 +147,26 @@ func (pd *PacketDefinition) Read(reader io.Reader) (PacketData, error) {
 		}
 
 		if err != nil {
-			return PacketData{}, err
+			if errors.Is(err, io.EOF) {
+				return packet, nil
+			}
+
+			return nil, err
 		}
 	}
 
-	return PacketData{}, nil
+	return packet, nil
 }
 
 func (pd *PacketDefinition) specifyArrayOptions(name string, elementDefinition *PacketDefinition, lengthOptions ArrayLengthOption) {
 	if i, ok := pd.namesMapping[name]; ok {
 		pd.Fields[i].ArrayElementDefinition = elementDefinition
 		pd.Fields[i].ArrayLengthOption = lengthOptions
+	}
+}
+
+func (pd *PacketDefinition) setFieldOpts(name string, opts []PacketFieldOpt) {
+	if i, ok := pd.namesMapping[name]; ok {
+		pd.Fields[i].FieldOptions = opts
 	}
 }

@@ -24,7 +24,9 @@ type PacketHeader struct {
 }
 
 func NewPacketReader() *PacketReader {
-	return &PacketReader{}
+	return &PacketReader{
+		compressionThreshold: -1,
+	}
 }
 
 func (pr *PacketReader) SetCompression(threshold int) {

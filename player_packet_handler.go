@@ -1,9 +1,7 @@
 package main
 
 import (
-	"bytes"
-	"compress/zlib"
-	"errors"
+	"github.com/mkorman9/go-minecraft-server/packets"
 	"io"
 	"log"
 	"net"
@@ -36,12 +34,13 @@ func (phe *PacketHandlingError) Error() string {
 }
 
 type PlayerPacketHandler struct {
-	player     *Player
-	world      *World
-	connection net.Conn
-	state      PlayerState
-	reader     io.Reader
-	writer     io.Writer
+	player       *Player
+	world        *World
+	connection   net.Conn
+	state        PlayerState
+	reader       io.Reader
+	packetReader *packets.PacketReader
+	packetWriter *packets.PacketWriter
 
 	ip                          string
 	verifyToken                 string
@@ -60,7 +59,8 @@ func NewPlayerPacketHandler(player *Player, world *World, connection net.Conn, i
 		connection:                  connection,
 		state:                       PlayerStateBeforeHandshake,
 		reader:                      connection,
-		writer:                      connection,
+		packetReader:                packets.NewPacketReader(),
+		packetWriter:                packets.NewPacketWriter(connection),
 		ip:                          ip,
 		enabledCompressionThreshold: -1,
 		canceled:                    false,
@@ -75,41 +75,22 @@ func (pph *PlayerPacketHandler) ReadLoop() {
 	}()
 
 	for {
-		packetMetadata, err := pph.readPacketMetadata()
+		packetDelivery, err := pph.packetReader.Read(pph.reader)
 		if err != nil {
-			if err == IgnorablePacketReadError {
+			if err == io.EOF {
 				break
+			}
+			if netOpError, ok := err.(*net.OpError); ok {
+				if netOpError.Err.Error() == "use of closed network connection" {
+					break
+				}
 			}
 
 			log.Printf("%v\n", err)
 			break
 		}
 
-		packetData := make([]byte, packetMetadata.PacketSize)
-		_, err = pph.reader.Read(packetData)
-		if err != nil {
-			log.Printf("%v\n", err)
-			break
-		}
-
-		if packetMetadata.UseCompression {
-			zlibReader, err := zlib.NewReader(bytes.NewReader(packetData))
-			if err != nil {
-				log.Printf("%v\n", err)
-				break
-			}
-
-			zlibBuffer := make([]byte, packetMetadata.UncompressedDataSize)
-			_, err = zlibReader.Read(zlibBuffer)
-			if err != nil && err != io.EOF {
-				log.Printf("%v\n", err)
-				break
-			}
-
-			packetData = zlibBuffer
-		}
-
-		err = pph.HandlePacket(packetData)
+		err = pph.HandlePacket(packetDelivery)
 		if err != nil {
 			if handlingError, ok := err.(*PacketHandlingError); ok {
 				pph.Cancel(handlingError.reason)
@@ -129,7 +110,7 @@ func (pph *PlayerPacketHandler) setupEncryption() error {
 	}
 
 	pph.reader = cipherStream.WrapReader(pph.reader)
-	pph.writer = cipherStream.WrapWriter(pph.writer)
+	pph.packetWriter.SetWriter(cipherStream.WrapWriter(pph.connection))
 
 	return nil
 }
@@ -147,104 +128,4 @@ func (pph *PlayerPacketHandler) setupCompression() error {
 	}
 
 	return nil
-}
-
-func (pph *PlayerPacketHandler) readPacketMetadata() (*PacketMetadata, error) {
-	switch pph.enabledCompressionThreshold {
-	case -1:
-		// no compression
-		packetSize, err := pph.peekVarInt()
-		if err != nil {
-			if err == io.EOF {
-				return nil, IgnorablePacketReadError
-			}
-			if netOpError, ok := err.(*net.OpError); ok {
-				if netOpError.Err.Error() == "use of closed network connection" {
-					return nil, IgnorablePacketReadError
-				}
-			}
-
-			return nil, err
-		}
-
-		if packetSize > MaxPacketSize {
-			return nil, errors.New("invalid packet size")
-		}
-
-		return &PacketMetadata{
-			PacketSize:           packetSize,
-			UncompressedDataSize: 0,
-			UseCompression:       false,
-		}, nil
-	default:
-		// compression
-		compressedDataSize, err := pph.peekVarInt()
-		if err != nil {
-			if err == io.EOF {
-				return nil, IgnorablePacketReadError
-			}
-			if netOpError, ok := err.(*net.OpError); ok {
-				if netOpError.Err.Error() == "use of closed network connection" {
-					return nil, IgnorablePacketReadError
-				}
-			}
-
-			return nil, err
-		}
-
-		uncompressedDataSize, err := pph.peekVarInt()
-		if err != nil {
-			if err == io.EOF {
-				return nil, IgnorablePacketReadError
-			}
-			if netOpError, ok := err.(*net.OpError); ok {
-				if netOpError.Err.Error() == "use of closed network connection" {
-					return nil, IgnorablePacketReadError
-				}
-			}
-
-			return nil, err
-		}
-
-		if compressedDataSize > MaxPacketSize || uncompressedDataSize > MaxPacketSize {
-			return nil, errors.New("invalid packet size")
-		}
-
-		compressedDataSize -= getVarIntSize(uncompressedDataSize)
-
-		return &PacketMetadata{
-			PacketSize:           compressedDataSize,
-			UncompressedDataSize: uncompressedDataSize,
-			UseCompression:       uncompressedDataSize != 0,
-		}, nil
-	}
-}
-
-func (pph *PlayerPacketHandler) peekVarInt() (int, error) {
-	var value int
-	var position int
-	var currentByte byte
-
-	for {
-		buff := make([]byte, 1)
-		_, err := pph.reader.Read(buff)
-		if err != nil {
-			return -1, err
-		}
-
-		currentByte = buff[0]
-		value |= int(currentByte) & SegmentBits << position
-
-		if (int(currentByte) & ContinueBit) == 0 {
-			break
-		}
-
-		position += 7
-
-		if position >= 32 {
-			return -1, errors.New("invalid VarInt size")
-		}
-	}
-
-	return value, nil
 }

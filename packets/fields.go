@@ -26,4 +26,5 @@ type Field struct {
 	Blueprint              any
 	ArrayElementDefinition *PacketDefinition
 	ArrayLengthOption      ArrayLengthOption
+	FieldOptions           []PacketFieldOpt
 }

@@ -2,105 +2,103 @@ package main
 
 import (
 	"fmt"
+	"github.com/mkorman9/go-minecraft-server/packets"
+	"io"
 	"log"
 	"time"
 )
 
-func (pph *PlayerPacketHandler) HandlePacket(packet []byte) (err error) {
-	packerDeserializer := NewPacketDeserializer(packet)
-	packetId := packerDeserializer.FetchVarInt()
-
+func (pph *PlayerPacketHandler) HandlePacket(packetDelivery *packets.PacketDelivery) (err error) {
 	switch pph.state {
 	case PlayerStateBeforeHandshake:
-		err = pph.OnBeforeHandshakePacket(packetId, packerDeserializer)
+		err = pph.OnBeforeHandshakePacket(packetDelivery.PacketID, packetDelivery.Reader)
 	case PlayerStateLogin:
-		err = pph.OnLoginPacket(packetId, packerDeserializer)
+		err = pph.OnLoginPacket(packetDelivery.PacketID, packetDelivery.Reader)
 	case PlayerStateEncryption:
-		err = pph.OnEncryptionPacket(packetId, packerDeserializer)
+		err = pph.OnEncryptionPacket(packetDelivery.PacketID, packetDelivery.Reader)
 	case PlayerStatePlay:
-		err = pph.OnPlayPacket(packetId, packerDeserializer)
+		err = pph.OnPlayPacket(packetDelivery.PacketID, packetDelivery.Reader)
 	}
 
 	return
 }
 
-func (pph *PlayerPacketHandler) OnBeforeHandshakePacket(packetId int, packerDeserializer *PacketDeserializer) error {
+func (pph *PlayerPacketHandler) OnBeforeHandshakePacket(packetId int, packetReader io.Reader) error {
 	switch packetId {
 	case 0x00:
-		if packerDeserializer.BytesLeft() > 0 {
-			return pph.OnHandshakeRequest(packerDeserializer)
-		} else {
-			return pph.OnStatusRequest(packerDeserializer)
-		}
+		return pph.OnHandshakeRequest(packetReader)
 	case 0x01:
-		return pph.OnPing(packerDeserializer)
+		return pph.OnPing(packetReader)
 	default:
 		return fmt.Errorf("unrecognized packet id: 0x%x in before handshake state", packetId)
 	}
 }
 
-func (pph *PlayerPacketHandler) OnLoginPacket(packetId int, packerDeserializer *PacketDeserializer) error {
+func (pph *PlayerPacketHandler) OnLoginPacket(packetId int, packetReader io.Reader) error {
 	switch packetId {
 	case 0x00:
-		return pph.OnLoginStartRequest(packerDeserializer)
+		return pph.OnLoginStartRequest(packetReader)
 	default:
 		return fmt.Errorf("unrecognized packet id: 0x%x in login state", packetId)
 	}
 }
 
-func (pph *PlayerPacketHandler) OnEncryptionPacket(packetId int, packerDeserializer *PacketDeserializer) error {
+func (pph *PlayerPacketHandler) OnEncryptionPacket(packetId int, packetReader io.Reader) error {
 	switch packetId {
 	case 0x01:
-		return pph.OnEncryptionResponse(packerDeserializer)
+		return pph.OnEncryptionResponse(packetReader)
 	default:
 		return fmt.Errorf("unrecognized packet id: 0x%x in encryption state", packetId)
 	}
 }
 
-func (pph *PlayerPacketHandler) OnPlayPacket(packetId int, packerDeserializer *PacketDeserializer) error {
+func (pph *PlayerPacketHandler) OnPlayPacket(packetId int, packetReader io.Reader) error {
 	switch packetId {
 	case 0x00:
-		return pph.OnTeleportConfirm(packerDeserializer)
+		return pph.OnTeleportConfirm(packetReader)
 	case 0x03:
-		return pph.OnChatCommand(packerDeserializer)
+		return pph.OnChatCommand(packetReader)
 	case 0x04:
-		return pph.OnChatMessage(packerDeserializer)
+		return pph.OnChatMessage(packetReader)
 	case 0x07:
-		return pph.OnSettings(packerDeserializer)
+		return pph.OnSettings(packetReader)
 	case 0x0c:
-		return pph.OnCustomPayload(packerDeserializer)
+		return pph.OnCustomPayload(packetReader)
 	case 0x11:
-		return pph.OnKeepAliveResponse(packerDeserializer)
+		return pph.OnKeepAliveResponse(packetReader)
 	case 0x13:
-		return pph.OnPosition(packerDeserializer)
+		return pph.OnPosition(packetReader)
 	case 0x14:
-		return pph.OnPositionLook(packerDeserializer)
+		return pph.OnPositionLook(packetReader)
 	case 0x15:
-		return pph.OnLook(packerDeserializer)
+		return pph.OnLook(packetReader)
 	case 0x1b:
-		return pph.OnAbilities(packerDeserializer)
+		return pph.OnAbilities(packetReader)
 	case 0x1d:
-		return pph.OnEntityAction(packerDeserializer)
+		return pph.OnEntityAction(packetReader)
 	case 0x2a:
-		return pph.OnSetCreativeSlot(packerDeserializer)
+		return pph.OnSetCreativeSlot(packetReader)
 	case 0x2e:
-		return pph.OnArmAnimation(packerDeserializer)
+		return pph.OnArmAnimation(packetReader)
 	default:
 		log.Printf("unrecognized packet id: 0x%x in play state\n", packetId)
 		return nil
 	}
 }
 
-func (pph *PlayerPacketHandler) OnHandshakeRequest(packerDeserializer *PacketDeserializer) error {
+func (pph *PlayerPacketHandler) OnHandshakeRequest(packetReader io.Reader) error {
 	log.Println("received HandshakeRequest")
 
-	var request HandshakeRequest
-	err := request.Unmarshal(packerDeserializer)
+	handshakeRequest, err := HandshakeRequest.Read(packetReader)
 	if err != nil {
 		return err
 	}
 
-	switch request.NextState {
+	if handshakeRequest.VarInt("protocolVersion") == 0 {
+		return nil // ignore status request
+	}
+
+	switch handshakeRequest.VarInt("nextState") {
 	case HandshakeTypeStatus:
 		return pph.sendHandshakeStatusResponse()
 	case HandshakeTypeLogin:
@@ -110,7 +108,7 @@ func (pph *PlayerPacketHandler) OnHandshakeRequest(packerDeserializer *PacketDes
 	return nil
 }
 
-func (pph *PlayerPacketHandler) OnStatusRequest(_ *PacketDeserializer) error {
+func (pph *PlayerPacketHandler) OnStatusRequest(_ io.Reader) error {
 	log.Println("received StatusRequest")
 
 	// ignore
@@ -118,39 +116,40 @@ func (pph *PlayerPacketHandler) OnStatusRequest(_ *PacketDeserializer) error {
 	return nil
 }
 
-func (pph *PlayerPacketHandler) OnPing(packerDeserializer *PacketDeserializer) error {
+func (pph *PlayerPacketHandler) OnPing(packetReader io.Reader) error {
 	log.Println("received PingRequest")
 
-	var request PingRequest
-	err := request.Unmarshal(packerDeserializer)
+	pingRequest, err := PingRequest.Read(packetReader)
 	if err != nil {
 		return err
 	}
 
-	return pph.sendPongResponse(request.Payload)
+	return pph.sendPongResponse(pingRequest.Int64("payload"))
 }
 
-func (pph *PlayerPacketHandler) OnLoginStartRequest(packerDeserializer *PacketDeserializer) error {
+func (pph *PlayerPacketHandler) OnLoginStartRequest(packetReader io.Reader) error {
 	log.Println("received LoginStartRequest")
 
-	var request LoginStartRequest
-	err := request.Unmarshal(packerDeserializer)
+	loginStartRequest, err := LoginStartRequest.Read(packetReader)
 	if err != nil {
 		return err
 	}
 
-	pph.player.Name = request.Name
-	pph.player.Signature = request.Signature
+	pph.player.Name = loginStartRequest.String("name")
 	pph.verifyToken, _ = getSecureRandomString(VerifyTokenLength)
 
-	if request.PublicKey != nil {
-		publicKey, err := loadPublicKey(request.PublicKey)
-		if err != nil {
-			log.Printf("%v\n", err)
-			return NewPacketHandlingError(err, NewChatMessage("Malformed Public Key"))
-		}
+	if loginStartRequest.Bool("hasSigData") {
+		pph.player.Signature = loginStartRequest.ByteArray("signature")
 
-		pph.player.PublicKey = publicKey
+		if loginStartRequest.ByteArray("publicKey") != nil {
+			publicKey, err := loadPublicKey(loginStartRequest.ByteArray("publicKey"))
+			if err != nil {
+				log.Printf("%v\n", err)
+				return NewPacketHandlingError(err, NewChatMessage("Malformed Public Key"))
+			}
+
+			pph.player.PublicKey = publicKey
+		}
 	}
 
 	if pph.world.Settings().OnlineMode {
@@ -171,16 +170,15 @@ func (pph *PlayerPacketHandler) OnLoginStartRequest(packerDeserializer *PacketDe
 	}
 }
 
-func (pph *PlayerPacketHandler) OnEncryptionResponse(packerDeserializer *PacketDeserializer) error {
+func (pph *PlayerPacketHandler) OnEncryptionResponse(packetReader io.Reader) error {
 	log.Println("received EncryptionResponse")
 
-	var response EncryptionResponse
-	err := response.Unmarshal(packerDeserializer)
+	encryptionResponse, err := EncryptionResponse.Read(packetReader)
 	if err != nil {
 		return err
 	}
 
-	sharedSecret, err := pph.world.Server().DecryptMessage(response.SharedSecret)
+	sharedSecret, err := pph.world.Server().DecryptMessage(encryptionResponse.ByteArray("sharedSecret"))
 	if err != nil {
 		log.Printf("%v\n", err)
 		return NewPacketHandlingError(err, NewChatMessage("Malformed Shared Secret"))
@@ -189,8 +187,8 @@ func (pph *PlayerPacketHandler) OnEncryptionResponse(packerDeserializer *PacketD
 	pph.sharedSecret = sharedSecret
 	pph.serverHash = pph.world.Server().GenerateServerHash(sharedSecret)
 
-	if response.VerifyToken != nil {
-		verifyToken, err := pph.world.Server().DecryptMessage(response.VerifyToken)
+	if encryptionResponse.Bool("hasVerifyToken") {
+		verifyToken, err := pph.world.Server().DecryptMessage(encryptionResponse.ByteArray("verifyToken"))
 		if err != nil {
 			log.Printf("%v\n", err)
 			return NewPacketHandlingError(err, NewChatMessage("Malformed Verify Token"))
@@ -204,8 +202,8 @@ func (pph *PlayerPacketHandler) OnEncryptionResponse(packerDeserializer *PacketD
 		err = verifyRsaSignature(
 			pph.player.PublicKey,
 			pph.verifyToken,
-			response.Salt,
-			response.MessageSignature,
+			encryptionResponse.Int64("salt"),
+			encryptionResponse.ByteArray("messageSignature"),
 		)
 		if err != nil {
 			log.Printf("%v\n", err)
@@ -231,11 +229,10 @@ func (pph *PlayerPacketHandler) OnEncryptionResponse(packerDeserializer *PacketD
 	return pph.OnJoin()
 }
 
-func (pph *PlayerPacketHandler) OnTeleportConfirm(packerDeserializer *PacketDeserializer) error {
+func (pph *PlayerPacketHandler) OnTeleportConfirm(packetReader io.Reader) error {
 	log.Println("received TeleportConfirm")
 
-	var packet TeleportConfirmPacket
-	err := packet.Unmarshal(packerDeserializer)
+	_, err := TeleportConfirmPacket.Read(packetReader)
 	if err != nil {
 		return err
 	}
@@ -245,101 +242,105 @@ func (pph *PlayerPacketHandler) OnTeleportConfirm(packerDeserializer *PacketDese
 	return nil
 }
 
-func (pph *PlayerPacketHandler) OnSettings(packerDeserializer *PacketDeserializer) error {
+func (pph *PlayerPacketHandler) OnSettings(packetReader io.Reader) error {
 	log.Println("received Settings")
 
-	var packet SettingsPacket
-	err := packet.Unmarshal(packerDeserializer)
+	settingsPacket, err := SettingsPacket.Read(packetReader)
 	if err != nil {
 		return err
 	}
 
 	pph.player.OnClientSettings(&PlayerClientSettings{
-		Locale:              packet.Locale,
-		ViewDistance:        packet.ViewDistance,
-		ChatColors:          packet.ChatColors,
-		SkinParts:           packet.SkinParts,
-		MainHand:            packet.MainHand,
-		EnableTextFiltering: packet.EnableTextFiltering,
-		EnableServerListing: packet.EnableServerListing,
+		Locale:              settingsPacket.String("locale"),
+		ViewDistance:        settingsPacket.Byte("viewDistance"),
+		ChatColors:          settingsPacket.Bool("chatColors"),
+		SkinParts:           settingsPacket.Byte("skinParts"),
+		MainHand:            settingsPacket.VarInt("mainHand"),
+		EnableTextFiltering: settingsPacket.Bool("enableTextFiltering"),
+		EnableServerListing: settingsPacket.Bool("enableServerListing"),
 	})
 
 	return nil
 }
 
-func (pph *PlayerPacketHandler) OnPosition(packerDeserializer *PacketDeserializer) error {
-	var packet PositionPacket
-	err := packet.Unmarshal(packerDeserializer)
+func (pph *PlayerPacketHandler) OnPosition(packerReader io.Reader) error {
+	positionPacket, err := PositionPacket.Read(packerReader)
 	if err != nil {
 		return err
 	}
 
-	pph.player.OnPositionUpdate(packet.X, packet.Y, packet.Z)
-	pph.player.OnGroundUpdate(packet.OnGround)
+	pph.player.OnPositionUpdate(
+		positionPacket.Float64("x"),
+		positionPacket.Float64("y"),
+		positionPacket.Float64("z"),
+	)
+	pph.player.OnGroundUpdate(positionPacket.Bool("onGround"))
 
 	return nil
 }
 
-func (pph *PlayerPacketHandler) OnPositionLook(packerDeserializer *PacketDeserializer) error {
-	var packet PositionLookPacket
-	err := packet.Unmarshal(packerDeserializer)
+func (pph *PlayerPacketHandler) OnPositionLook(packetReader io.Reader) error {
+	positionLookPacket, err := PositionLookPacket.Read(packetReader)
 	if err != nil {
 		return err
 	}
 
-	pph.player.OnPositionUpdate(packet.X, packet.Y, packet.Z)
-	pph.player.OnGroundUpdate(packet.OnGround)
-	pph.player.OnLookUpdate(packet.Yaw, packet.Pitch)
+	pph.player.OnPositionUpdate(
+		positionLookPacket.Float64("x"),
+		positionLookPacket.Float64("y"),
+		positionLookPacket.Float64("z"),
+	)
+	pph.player.OnGroundUpdate(positionLookPacket.Bool("onGround"))
+	pph.player.OnLookUpdate(positionLookPacket.Float32("yaw"), positionLookPacket.Float32("pitch"))
 
 	return nil
 }
 
-func (pph *PlayerPacketHandler) OnLook(packerDeserializer *PacketDeserializer) error {
-	var packet LookPacket
-	err := packet.Unmarshal(packerDeserializer)
+func (pph *PlayerPacketHandler) OnLook(packetReader io.Reader) error {
+	lookPacket, err := LookPacket.Read(packetReader)
 	if err != nil {
 		return err
 	}
 
-	pph.player.OnGroundUpdate(packet.OnGround)
-	pph.player.OnLookUpdate(packet.Yaw, packet.Pitch)
+	pph.player.OnGroundUpdate(lookPacket.Bool("onGround"))
+	pph.player.OnLookUpdate(lookPacket.Float32("yaw"), lookPacket.Float32("pitch"))
 
 	return nil
 }
 
-func (pph *PlayerPacketHandler) OnCustomPayload(packerDeserializer *PacketDeserializer) error {
+func (pph *PlayerPacketHandler) OnCustomPayload(packetReader io.Reader) error {
 	log.Println("received CustomPayload")
 
-	var packet CustomPayloadPacket
-	err := packet.Unmarshal(packerDeserializer)
+	customPayloadPacket, err := CustomPayloadPacket.Read(packetReader)
 	if err != nil {
 		return err
 	}
 
-	pph.player.OnPluginChannel(packet.Channel, packet.Data)
+	pph.player.OnPluginChannel(
+		customPayloadPacket.String("channel"),
+		customPayloadPacket.ByteArray("data"),
+	)
 
 	return nil
 }
 
-func (pph *PlayerPacketHandler) OnArmAnimation(packerDeserializer *PacketDeserializer) error {
+func (pph *PlayerPacketHandler) OnArmAnimation(packetReader io.Reader) error {
 	log.Println("received ArmAnimation")
 
-	var packet ArmAnimationPacket
-	err := packet.Unmarshal(packerDeserializer)
+	armAnimationPacket, err := ArmAnimationPacket.Read(packetReader)
 	if err != nil {
 		return err
 	}
 
-	pph.player.OnArmAnimation(packet.Hand)
+	pph.player.OnArmAnimation(armAnimationPacket.VarInt("hand"))
 
 	return nil
 }
 
-func (pph *PlayerPacketHandler) OnAbilities(packerDeserializer *PacketDeserializer) error {
+func (pph *PlayerPacketHandler) OnAbilities(packetReader io.Reader) error {
 	log.Println("received Abilities")
 
-	var packet AbilitiesPacket
-	err := packet.Unmarshal(packerDeserializer)
+	_, err := AbilitiesPacket.Read(packetReader)
 	if err != nil {
 		return err
 	}
@@ -349,11 +350,10 @@ func (pph *PlayerPacketHandler) OnAbilities(packerDeserializer *PacketDeserializ
 	return nil
 }
 
-func (pph *PlayerPacketHandler) OnSetCreativeSlot(packerDeserializer *PacketDeserializer) error {
+func (pph *PlayerPacketHandler) OnSetCreativeSlot(packetReader io.Reader) error {
 	log.Println("received SetCreativeSlot")
 
-	var packet SetCreativeSlotPacket
-	err := packet.Unmarshal(packerDeserializer)
+	_, err := SetCreativeSlotPacket.Read(packetReader)
 	if err != nil {
 		return err
 	}
@@ -363,56 +363,62 @@ func (pph *PlayerPacketHandler) OnSetCreativeSlot(packerDeserializer *PacketDese
 	return nil
 }
 
-func (pph *PlayerPacketHandler) OnKeepAliveResponse(packerDeserializer *PacketDeserializer) error {
-	var packet KeepAliveResponsePacket
-	err := packet.Unmarshal(packerDeserializer)
+func (pph *PlayerPacketHandler) OnKeepAliveResponse(packetReader io.Reader) error {
+	keepAliveResponsePacket, err := KeepAliveResponsePacket.Read(packetReader)
 	if err != nil {
 		return err
 	}
 
-	pph.player.OnKeepAliveResponse(packet.KeepAliveID)
+	pph.player.OnKeepAliveResponse(keepAliveResponsePacket.Int64("keepAliveId"))
 
 	return nil
 }
 
-func (pph *PlayerPacketHandler) OnEntityAction(packerDeserializer *PacketDeserializer) error {
+func (pph *PlayerPacketHandler) OnEntityAction(packetReader io.Reader) error {
 	log.Println("received EntityAction")
 
-	var packet EntityActionPacket
-	err := packet.Unmarshal(packerDeserializer)
+	entityActionPacket, err := EntityActionPacket.Read(packetReader)
 	if err != nil {
 		return err
 	}
 
-	pph.player.OnAction(packet.EntityID, packet.ActionID, packet.JumpBoost)
+	pph.player.OnAction(
+		entityActionPacket.VarInt("entityId"),
+		entityActionPacket.VarInt("actionId"),
+		entityActionPacket.VarInt("jumpBoost"),
+	)
 
 	return nil
 }
 
-func (pph *PlayerPacketHandler) OnChatCommand(packerDeserializer *PacketDeserializer) error {
+func (pph *PlayerPacketHandler) OnChatCommand(packetReader io.Reader) error {
 	log.Println("received ChatCommand")
 
-	var packet ChatCommandPacket
-	err := packet.Unmarshal(packerDeserializer)
+	chatCommandPacket, err := ChatCommandPacket.Read(packetReader)
 	if err != nil {
 		return err
 	}
 
-	pph.player.OnChatCommand(packet.Message, time.UnixMilli(packet.Timestamp))
+	pph.player.OnChatCommand(
+		chatCommandPacket.String("message"),
+		time.UnixMilli(chatCommandPacket.Int64("timestamp")),
+	)
 
 	return nil
 }
 
-func (pph *PlayerPacketHandler) OnChatMessage(packerDeserializer *PacketDeserializer) error {
+func (pph *PlayerPacketHandler) OnChatMessage(packetReader io.Reader) error {
 	log.Println("received ChatMessage")
 
-	var packet ChatMessagePacket
-	err := packet.Unmarshal(packerDeserializer)
+	chatMessagePacket, err := ChatMessagePacket.Read(packetReader)
 	if err != nil {
 		return err
 	}
 
-	pph.player.OnChatMessage(packet.Message, time.UnixMilli(packet.Timestamp))
+	pph.player.OnChatMessage(
+		chatMessagePacket.String("message"),
+		time.UnixMilli(chatMessagePacket.Int64("timestamp")),
+	)
 
 	return nil
 }

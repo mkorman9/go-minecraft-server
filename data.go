@@ -2,12 +2,13 @@ package main
 
 import (
 	"encoding/json"
+	"github.com/mkorman9/go-minecraft-server/packets"
 	"os"
 )
 
 type Data struct {
 	DimensionCodec      *DimensionCodec
-	SpawnPosition       *Position
+	SpawnPosition       *packets.Position
 	SpawnDimension      string
 	WorldNames          []string
 	IsHardcore          bool
@@ -19,7 +20,7 @@ type Data struct {
 
 func LoadData() (*Data, error) {
 	data := Data{
-		SpawnPosition:       NewPosition(0, 64, 0),
+		SpawnPosition:       packets.NewPosition(0, 64, 0),
 		SpawnDimension:      "minecraft:overworld",
 		WorldNames:          []string{"minecraft:overworld", "minecraft:the_nether", "minecraft:the_end"},
 		IsHardcore:          false,

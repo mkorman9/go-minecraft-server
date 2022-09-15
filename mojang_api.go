@@ -3,13 +3,14 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/mkorman9/go-minecraft-server/packets"
 	"net/http"
 	"time"
 )
 
 type MojangPlayerVerification struct {
 	Verified bool
-	UUID     *UUID
+	UUID     *packets.UUID
 }
 
 type mojangVerifyPlayerResponse struct {

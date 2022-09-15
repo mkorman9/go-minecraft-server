@@ -209,8 +209,9 @@ func readSlot(reader io.Reader) (slot SlotData, err error) {
 			return
 		}
 
-		tags, err := readNBT(reader, &nbt.RawMessage{})
-		if err != nil {
+		tags, e := readNBT(reader, &nbt.RawMessage{})
+		if e != nil {
+			err = e
 			return
 		}
 		slot.NBT = *tags.(*nbt.RawMessage)

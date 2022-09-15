@@ -13,7 +13,8 @@ type PacketWriter struct {
 
 func NewPacketWriter(writer io.Writer) *PacketWriter {
 	return &PacketWriter{
-		writer: writer,
+		writer:               writer,
+		compressionThreshold: -1,
 	}
 }
 

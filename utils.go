@@ -1,7 +1,6 @@
 package main
 
 import (
-	"bytes"
 	"crypto"
 	"crypto/rand"
 	"crypto/rsa"
@@ -10,15 +9,10 @@ import (
 	"encoding/binary"
 	"encoding/hex"
 	"github.com/gofrs/uuid"
+	"github.com/mkorman9/go-minecraft-server/packets"
 	"net"
 	"strings"
 )
-
-func getVarIntSize(value int) int {
-	tmp := &PacketSerializer{buffer: bytes.NewBuffer(make([]byte, 0))}
-	tmp.AppendVarInt(value)
-	return tmp.buffer.Len()
-}
 
 func getSecureRandomString(lengthBytes int) (string, error) {
 	var buff = make([]byte, lengthBytes)
@@ -29,12 +23,12 @@ func getSecureRandomString(lengthBytes int) (string, error) {
 	return hex.EncodeToString(buff), nil
 }
 
-func getRandomUUID() UUID {
+func getRandomUUID() packets.UUID {
 	v, _ := uuid.NewV4()
 	upper := int64(binary.BigEndian.Uint64([]byte{v[0], v[1], v[2], v[3], v[4], v[5], v[6], v[7]}))
 	lower := int64(binary.BigEndian.Uint64([]byte{v[8], v[9], v[10], v[11], v[12], v[13], v[14], v[15]}))
 
-	return UUID{
+	return packets.UUID{
 		Upper: upper,
 		Lower: lower,
 	}
@@ -70,7 +64,7 @@ func parseRemoteAddress(connection net.Conn) string {
 	return address
 }
 
-func mojangIdToUUID(mojangId string) (*UUID, error) {
+func mojangIdToUUID(mojangId string) (*packets.UUID, error) {
 	upperPart := mojangId[:16]
 	lowerPart := mojangId[16:]
 
@@ -84,7 +78,7 @@ func mojangIdToUUID(mojangId string) (*UUID, error) {
 		return nil, err
 	}
 
-	return &UUID{
+	return &packets.UUID{
 		Upper: int64(binary.BigEndian.Uint64(upperPartBytes)),
 		Lower: int64(binary.BigEndian.Uint64(lowerPartBytes)),
 	}, nil

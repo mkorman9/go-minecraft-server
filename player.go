@@ -2,13 +2,14 @@ package main
 
 import (
 	"crypto/rsa"
+	"github.com/mkorman9/go-minecraft-server/packets"
 	"log"
 	"time"
 )
 
 type Player struct {
 	Name           string
-	UUID           UUID
+	UUID           packets.UUID
 	EntityID       int32
 	IP             string
 	PublicKey      *rsa.PublicKey

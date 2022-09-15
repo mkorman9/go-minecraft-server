@@ -6,7 +6,7 @@ import (
 
 type PacketData struct {
 	PacketID int
-	Fields   []Field
+	Fields   []*Field
 
 	namesMapping map[string]int
 }
@@ -38,8 +38,29 @@ func (pd *PacketData) WriteTo(writer io.Writer) (int64, error) {
 	for _, field := range pd.Fields {
 		var err error
 
+		cancelField := false
+		for _, opt := range field.FieldOptions {
+			if !opt(pd) {
+				cancelField = true
+			}
+		}
+		if cancelField {
+			continue
+		}
+
 		switch field.Type {
 		case TypeArray:
+			if field.Value == nil {
+				if field.ArrayLengthOption == ArrayLengthAppend {
+					err := writeVarInt(writer, 0)
+					if err != nil {
+						return 0, err
+					}
+				}
+
+				continue
+			}
+
 			array := field.Value.(ArrayValue)
 
 			if field.ArrayLengthOption == ArrayLengthAppend {
@@ -82,11 +103,11 @@ func (pd *PacketData) WriteTo(writer io.Writer) (int64, error) {
 		case TypeNBT:
 			err = writeNBT(writer, field.Value)
 		case TypePosition:
-			err = writePosition(writer, field.Value.(Position))
+			err = writePosition(writer, field.Value.(*Position))
 		case TypeSlot:
-			err = writeSlot(writer, field.Value.(SlotData))
+			err = writeSlot(writer, field.Value.(*SlotData))
 		case TypeBitSet:
-			err = writeBitSet(writer, field.Value.(BitSet))
+			err = writeBitSet(writer, field.Value.(*BitSet))
 		}
 
 		if err != nil {

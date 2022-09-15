@@ -122,11 +122,11 @@ func writeNBT(writer io.Writer, obj any) error {
 	return err
 }
 
-func writePosition(writer io.Writer, position Position) error {
+func writePosition(writer io.Writer, position *Position) error {
 	return writeInt64(writer, position.ToInt64())
 }
 
-func writeSlot(writer io.Writer, slot SlotData) error {
+func writeSlot(writer io.Writer, slot *SlotData) error {
 	err := writeBool(writer, slot.Present)
 	if err != nil {
 		return err
@@ -152,7 +152,7 @@ func writeSlot(writer io.Writer, slot SlotData) error {
 	return nil
 }
 
-func writeBitSet(writer io.Writer, bitSet BitSet) error {
+func writeBitSet(writer io.Writer, bitSet *BitSet) error {
 	err := writeVarInt(writer, len(bitSet.v))
 	if err != nil {
 		return err

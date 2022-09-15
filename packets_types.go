@@ -1,20 +1,9 @@
 package main
 
-import "github.com/mkorman9/go-minecraft-server/nbt"
-
-type Packet interface {
-	Marshal(writer *PacketSerializer) ([]byte, error)
-	Unmarshal(reader *PacketDeserializer) error
-}
-
-type HandshakeType = int
-
 const (
 	HandshakeTypeStatus = 1
 	HandshakeTypeLogin  = 2
 )
-
-type SystemChatMessageType = int
 
 const (
 	SystemChatMessageTypeChat     = 0
@@ -25,18 +14,11 @@ const (
 type GameMode = byte
 
 const (
-	GameModeSurvival  = 0
-	GameModeCreative  = 1
-	GameModeAdventure = 2
-	GameModeUnknown   = 255
+	GameModeSurvival  byte = 0
+	GameModeCreative  byte = 1
+	GameModeAdventure byte = 2
+	GameModeUnknown   byte = 255
 )
-
-type SlotData struct {
-	Present   bool
-	ItemID    int
-	ItemCount byte
-	NBT       nbt.RawMessage
-}
 
 type EntityAction = int
 

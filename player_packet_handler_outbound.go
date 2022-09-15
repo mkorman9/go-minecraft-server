@@ -1,6 +1,9 @@
 package main
 
-import "log"
+import (
+	"github.com/mkorman9/go-minecraft-server/packets"
+	"log"
+)
 
 func (pph *PlayerPacketHandler) Cancel(reason *ChatMessage) {
 	pph.canceledMutex.Lock()
@@ -44,140 +47,133 @@ func (pph *PlayerPacketHandler) sendHandshakeStatusResponse() error {
 		return err
 	}
 
-	response := &HandshakeResponse{
-		StatusJSON: serverStatusJSON,
-	}
+	handshakeResponse := HandshakeResponse.
+		New().
+		Set("statusJson", serverStatusJSON)
 
-	return pph.writePacket(response)
+	return pph.packetWriter.Write(handshakeResponse)
 }
 
 func (pph *PlayerPacketHandler) sendPongResponse(payload int64) error {
-	packet := &PongResponse{
-		Payload: payload,
-	}
+	pongResponse := PongResponse.
+		New().
+		Set("payload", payload)
 
-	return pph.writePacket(packet)
+	return pph.packetWriter.Write(pongResponse)
 }
 
 func (pph *PlayerPacketHandler) sendEncryptionRequest() error {
-	response := &EncryptionRequest{
-		ServerID:    "",
-		PublicKey:   pph.world.Server().PublicKey(),
-		VerifyToken: pph.verifyToken,
-	}
+	encryptionRequest := EncryptionRequest.
+		New().
+		Set("serverId", "").
+		Set("publicKey", pph.world.Server().PublicKey()).
+		Set("verifyToken", pph.verifyToken)
 
-	return pph.writePacket(response)
+	return pph.packetWriter.Write(encryptionRequest)
 }
 
 func (pph *PlayerPacketHandler) sendSetCompressionRequest(compressionThreshold int) error {
-	request := &SetCompressionRequest{
-		Threshold: compressionThreshold,
-	}
+	setCompressionRequest := SetCompressionRequest.
+		New().
+		Set("threshold", compressionThreshold)
 
-	return pph.writePacket(request)
+	return pph.packetWriter.Write(setCompressionRequest)
 }
 
 func (pph *PlayerPacketHandler) sendCancelLogin(reason *ChatMessage) error {
-	packet := &CancelLoginPacket{
-		Reason: reason,
-	}
+	cancelLoginPacket := CancelLoginPacket.
+		New().
+		Set("reason", reason.Encode())
 
-	return pph.writePacket(packet)
+	return pph.packetWriter.Write(cancelLoginPacket)
 }
 
 func (pph *PlayerPacketHandler) sendLoginSuccessResponse() error {
-	response := &LoginSuccessResponse{
-		UUID:     pph.player.UUID,
-		Username: pph.player.Name,
-	}
+	loginSuccessResponse := LoginSuccessResponse.
+		New().
+		Set("uuid", pph.player.UUID).
+		Set("username", pph.player.Name)
 
-	return pph.writePacket(response)
+	return pph.packetWriter.Write(loginSuccessResponse)
 }
 
 func (pph *PlayerPacketHandler) sendPlayPacket(entityID int32) error {
-	packet := &PlayPacket{
-		EntityID:            entityID,
-		IsHardcore:          pph.world.Data().IsHardcore,
-		GameMode:            pph.world.Data().GameMode,
-		PreviousGameMode:    GameModeUnknown,
-		WorldNames:          pph.world.Data().WorldNames,
-		DimensionCodec:      *pph.world.Data().DimensionCodec,
-		WorldType:           pph.world.Data().SpawnDimension,
-		WorldName:           pph.world.Data().SpawnDimension,
-		HashedSeed:          pph.world.Data().HashedSeed,
-		MaxPlayers:          pph.world.Settings().MaxPlayers,
-		ViewDistance:        pph.world.Settings().ViewDistance,
-		SimulationDistance:  pph.world.Settings().SimulationDistance,
-		ReducedDebugInfo:    !pph.world.Settings().IsDebug,
-		EnableRespawnScreen: pph.world.Data().EnableRespawnScreen,
-		IsDebug:             pph.world.Settings().IsDebug,
-		IsFlat:              pph.world.Data().IsFlat,
-	}
+	playPacket := PlayPacket.
+		New().
+		Set("entityID", entityID).
+		Set("isHardcore", pph.world.Data().IsHardcore).
+		Set("gameMode", pph.world.Data().GameMode).
+		Set("previousGameMode", GameModeUnknown).
+		SetArray(
+			"worldNames",
+			packets.ConvertArrayValue(
+				pph.world.Data().WorldNames,
+				func(value *string, packet *packets.PacketData) {
+					packet.Set("value", *value)
+				},
+			),
+		).
+		Set("dimensionCodec", pph.world.Data().DimensionCodec).
+		Set("worldType", pph.world.Data().SpawnDimension).
+		Set("worldName", pph.world.Data().SpawnDimension).
+		Set("hashedSeed", pph.world.Data().HashedSeed).
+		Set("maxPlayers", pph.world.Settings().MaxPlayers).
+		Set("viewDistance", pph.world.Settings().ViewDistance).
+		Set("simulationDistance", pph.world.Settings().SimulationDistance).
+		Set("reducedDebugInfo", !pph.world.Settings().IsDebug).
+		Set("enableRespawnScreen", pph.world.Data().EnableRespawnScreen).
+		Set("isDebug", pph.world.Settings().IsDebug).
+		Set("isFlat", pph.world.Data().IsFlat).
+		Set("hasDeath", false)
 
-	return pph.writePacket(packet)
+	return pph.packetWriter.Write(playPacket)
 }
 
 func (pph *PlayerPacketHandler) sendDisconnect(reason *ChatMessage) error {
-	packet := &DisconnectPacket{
-		Reason: reason,
-	}
+	disconnectPacket := DisconnectPacket.
+		New().
+		Set("reason", reason.Encode())
 
-	return pph.writePacket(packet)
+	return pph.packetWriter.Write(disconnectPacket)
 }
 
 func (pph *PlayerPacketHandler) sendSystemChatMessage(message *ChatMessage) error {
-	packet := &SystemChatPacket{
-		Content: message,
-		Type:    SystemChatMessageTypeChat,
-	}
+	systemChatPacket := SystemChatPacket.
+		New().
+		Set("content", message.Encode()).
+		Set("type", SystemChatMessageTypeChat)
 
-	return pph.writePacket(packet)
+	return pph.packetWriter.Write(systemChatPacket)
 }
 
 func (pph *PlayerPacketHandler) sendSpawnPosition() error {
-	packet := &SpawnPositionPacket{
-		Location: pph.world.Data().SpawnPosition,
-		Angle:    0,
-	}
+	spawnPositionPacket := SpawnPositionPacket.
+		New().
+		Set("location", pph.world.Data().SpawnPosition).
+		Set("angle", float32(0))
 
-	return pph.writePacket(packet)
+	return pph.packetWriter.Write(spawnPositionPacket)
 }
 
 func (pph *PlayerPacketHandler) sendPositionUpdate(x float64, y float64, z float64) error {
-	packet := &UpdatePositionPacket{
-		X:               x,
-		Y:               y,
-		Z:               z,
-		Yaw:             pph.player.Yaw,
-		Pitch:           pph.player.Pitch,
-		Flags:           0,
-		TeleportID:      0,
-		DismountVehicle: false,
-	}
+	updatePositionPacket := UpdatePositionPacket.
+		New().
+		Set("x", x).
+		Set("y", y).
+		Set("z", z).
+		Set("yaw", pph.player.Yaw).
+		Set("pitch", pph.player.Pitch).
+		Set("flags", 0).
+		Set("teleportId", 0).
+		Set("dismountVehicle", false)
 
-	return pph.writePacket(packet)
+	return pph.packetWriter.Write(updatePositionPacket)
 }
 
 func (pph *PlayerPacketHandler) sendKeepAlive(keepAliveID int64) error {
-	packet := &KeepAlivePacket{
-		KeepAliveID: keepAliveID,
-	}
+	keepAlivePacket := KeepAlivePacket.
+		New().
+		Set("keepAliveId", keepAliveID)
 
-	return pph.writePacket(packet)
-}
-
-func (pph *PlayerPacketHandler) writePacket(packet Packet) error {
-	data, err := packet.Marshal(NewPackerSerializer(pph.enabledCompressionThreshold))
-	if err != nil {
-		log.Printf("%v\n", err)
-		return err
-	}
-
-	_, err = pph.writer.Write(data)
-	if err != nil {
-		log.Printf("%v\n", err)
-		return err
-	}
-
-	return nil
+	return pph.packetWriter.Write(keepAlivePacket)
 }
