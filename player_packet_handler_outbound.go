@@ -108,8 +108,8 @@ func (pph *PlayerPacketHandler) sendPlayPacket(entityID int32) error {
 			"worldNames",
 			packets.ConvertArrayValue(
 				pph.world.Data().WorldNames,
-				func(value *string, packet *packets.PacketData) {
-					packet.Set("value", *value)
+				func(value string, packet *packets.PacketData) {
+					packet.Set("value", value)
 				},
 			),
 		).
@@ -176,4 +176,48 @@ func (pph *PlayerPacketHandler) sendKeepAlive(keepAliveID int64) error {
 		Set("keepAliveId", keepAliveID)
 
 	return pph.packetWriter.Write(keepAlivePacket)
+}
+
+func (pph *PlayerPacketHandler) sendPlayerListUpdate(players []*Player) error {
+	playerInfoPacket := PlayerInfoPacket.
+		New().
+		Set("actionId", 0).
+		SetArray(
+			"playersToAdd",
+			packets.ConvertArrayValue(players, func(player *Player, packet *packets.PacketData) {
+				packet.Set("uuid", player.UUID).
+					Set("name", player.Name)
+
+				var properties []SignedProperties
+				if player.Textures != "" {
+					properties = append(properties, SignedProperties{
+						Name:      "textures",
+						Value:     player.TexturesSignature,
+						IsSigned:  true,
+						Signature: player.Signature,
+					})
+				}
+
+				packet.SetArray(
+					"properties",
+					packets.ConvertArrayValue(properties, func(property SignedProperties, packet2 *packets.PacketData) {
+						packet2.Set("name", property.Name)
+						packet2.Set("value", property.Value)
+						packet2.Set("isSigned", property.IsSigned)
+						packet2.Set("signature", property.Signature)
+					}),
+				)
+
+				packet.Set("gameMode", int(player.GameMode)).
+					Set("ping", player.Ping).
+					Set("hasDisplayName", true).
+					Set("displayName", player.DisplayName.Encode()).
+					Set("hasSigData", true).
+					Set("timestamp", player.Timestamp).
+					Set("publicKey", player.PublicKeyDER).
+					Set("signature", player.Signature)
+			}),
+		)
+
+	return pph.packetWriter.Write(playerInfoPacket)
 }

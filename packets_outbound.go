@@ -153,6 +153,76 @@ var UpdatePositionPacket = packets.Packet(
 )
 
 /*
+	0x34: Player Info
+*/
+
+var PlayerInfoPacket = packets.Packet(
+	packets.ID(0x34),
+	packets.VarInt("actionId"),
+	packets.ArrayWithOptions(
+		"playersToAdd",
+		packets.ArrayLengthPrefixed,
+		[]packets.PacketOpt{
+			packets.UUIDField("uuid"),
+			packets.String("name"),
+			packets.Array(
+				"properties",
+				packets.ArrayLengthPrefixed,
+				packets.String("name"),
+				packets.String("value"),
+				packets.Bool("isSigned"),
+				packets.String("signature", packets.OnlyIfTrue("isSigned")),
+			),
+			packets.VarInt("gameMode"),
+			packets.VarInt("ping"),
+			packets.Bool("hasDisplayName"),
+			packets.String("displayName", packets.OnlyIfTrue("hasDisplayName")),
+			packets.Bool("hasSigData"),
+			packets.Int64("timestamp", packets.OnlyIfTrue("hasSigData")),
+			packets.ByteArray("publicKey", packets.OnlyIfTrue("hasSigData")),
+			packets.String("signature", packets.OnlyIfTrue("hasSigData")),
+		},
+		packets.OnlyIfEqual("actionId", 0),
+	),
+	packets.ArrayWithOptions(
+		"playersToUpdateGameMode",
+		packets.ArrayLengthPrefixed,
+		[]packets.PacketOpt{
+			packets.UUIDField("uuid"),
+			packets.VarInt("gameMode"),
+		},
+		packets.OnlyIfEqual("actionId", 1),
+	),
+	packets.ArrayWithOptions(
+		"playersToUpdateLatency",
+		packets.ArrayLengthPrefixed,
+		[]packets.PacketOpt{
+			packets.UUIDField("uuid"),
+			packets.VarInt("ping"),
+		},
+		packets.OnlyIfEqual("actionId", 2),
+	),
+	packets.ArrayWithOptions(
+		"playersToUpdateDisplayName",
+		packets.ArrayLengthPrefixed,
+		[]packets.PacketOpt{
+			packets.UUIDField("uuid"),
+			packets.Bool("hasDisplayName"),
+			packets.String("displayName", packets.OnlyIfTrue("hasDisplayName")),
+		},
+		packets.OnlyIfEqual("actionId", 3),
+	),
+	packets.ArrayWithOptions(
+		"playersToRemove",
+		packets.ArrayLengthPrefixed,
+		[]packets.PacketOpt{
+			packets.UUIDField("uuid"),
+		},
+		packets.OnlyIfEqual("actionId", 4),
+	),
+)
+
+/*
 	0x1f: Map Chunk
 */
 

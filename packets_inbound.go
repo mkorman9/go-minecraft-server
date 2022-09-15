@@ -33,7 +33,7 @@ var LoginStartRequest = packets.Packet(
 	packets.Bool("hasSigData"),
 	packets.Int64("timestamp", packets.OnlyIfTrue("hasSigData")),
 	packets.ByteArray("publicKey", packets.OnlyIfTrue("hasSigData")),
-	packets.ByteArray("signature", packets.OnlyIfTrue("hasSigData")),
+	packets.String("signature", packets.OnlyIfTrue("hasSigData")),
 )
 
 /*

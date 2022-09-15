@@ -8,20 +8,26 @@ import (
 )
 
 type Player struct {
-	Name           string
-	UUID           packets.UUID
-	EntityID       int32
-	IP             string
-	PublicKey      *rsa.PublicKey
-	Signature      []byte
-	ClientSettings *PlayerClientSettings
-	X              float64
-	Y              float64
-	Z              float64
-	Yaw            float32
-	Pitch          float32
-	OnGround       bool
-	GameMode       GameMode
+	Name              string
+	DisplayName       *ChatMessage
+	UUID              packets.UUID
+	EntityID          int32
+	IP                string
+	PublicKey         *rsa.PublicKey
+	PublicKeyDER      []byte
+	Signature         string
+	Timestamp         int64
+	ClientSettings    *PlayerClientSettings
+	X                 float64
+	Y                 float64
+	Z                 float64
+	Yaw               float32
+	Pitch             float32
+	OnGround          bool
+	GameMode          GameMode
+	Textures          string
+	TexturesSignature string
+	Ping              int
 
 	packetHandler   *PlayerPacketHandler
 	world           *World
@@ -42,12 +48,13 @@ type PlayerClientSettings struct {
 
 func NewPlayer(world *World, ip string) *Player {
 	return &Player{
-		Name:     "",
-		UUID:     getRandomUUID(),
-		EntityID: -1,
-		IP:       ip,
-		GameMode: GameModeUnknown,
-		world:    world,
+		Name:        "",
+		DisplayName: NewChatMessage(""),
+		UUID:        getRandomUUID(),
+		EntityID:    -1,
+		IP:          ip,
+		GameMode:    GameModeUnknown,
+		world:       world,
 	}
 }
 

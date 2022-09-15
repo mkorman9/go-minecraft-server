@@ -23,6 +23,7 @@ func Array(name string, lengthOption ArrayLengthOption, fields ...PacketOpt) Pac
 		packet.specifyArrayOptions(name, Packet(fields...), lengthOption)
 	}
 }
+
 func ArrayWithOptions(name string, lengthOption ArrayLengthOption, fields []PacketOpt, opts ...PacketFieldOpt) PacketOpt {
 	return func(packet *PacketDefinition) {
 		packet.AddField(name, TypeArray)
@@ -153,5 +154,11 @@ func OnlyIfTrue(fieldName string) PacketFieldOpt {
 func OnlyIfFalse(fieldName string) PacketFieldOpt {
 	return func(packet *PacketData) bool {
 		return !packet.Bool(fieldName)
+	}
+}
+
+func OnlyIfEqual(fieldName string, value any) PacketFieldOpt {
+	return func(packet *PacketData) bool {
+		return packet.Any(fieldName) == value
 	}
 }

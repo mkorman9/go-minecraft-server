@@ -118,6 +118,14 @@ func (pd *PacketData) WriteTo(writer io.Writer) (int64, error) {
 	return 0, nil
 }
 
+func (pd *PacketData) Any(name string) any {
+	if i, ok := pd.namesMapping[name]; ok {
+		return pd.Fields[i].Value
+	}
+
+	return 0
+}
+
 func (pd *PacketData) Array(name string) ArrayValue {
 	if i, ok := pd.namesMapping[name]; ok {
 		if pd.Fields[i].Type == TypeByte {

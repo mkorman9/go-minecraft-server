@@ -1,6 +1,7 @@
 package main
 
 import (
+	"crypto/x509"
 	"fmt"
 	"github.com/mkorman9/go-minecraft-server/packets"
 	"io"
@@ -136,10 +137,11 @@ func (pph *PlayerPacketHandler) OnLoginStartRequest(packetReader io.Reader) erro
 	}
 
 	pph.player.Name = loginStartRequest.String("name")
+	pph.player.DisplayName = NewChatMessage(loginStartRequest.String("name"))
 	pph.verifyToken, _ = getSecureRandomString(VerifyTokenLength)
 
 	if loginStartRequest.Bool("hasSigData") {
-		pph.player.Signature = loginStartRequest.ByteArray("signature")
+		pph.player.Signature = loginStartRequest.String("signature")
 
 		if loginStartRequest.ByteArray("publicKey") != nil {
 			publicKey, err := loadPublicKey(loginStartRequest.ByteArray("publicKey"))
@@ -148,7 +150,14 @@ func (pph *PlayerPacketHandler) OnLoginStartRequest(packetReader io.Reader) erro
 				return NewPacketHandlingError(err, NewChatMessage("Malformed Public Key"))
 			}
 
+			publicKeyDER, err := x509.MarshalPKIXPublicKey(publicKey)
+			if err != nil {
+				return err
+			}
+
 			pph.player.PublicKey = publicKey
+			pph.player.PublicKeyDER = publicKeyDER
+			pph.player.Timestamp = loginStartRequest.Int64("timestamp")
 		}
 	}
 
@@ -223,6 +232,8 @@ func (pph *PlayerPacketHandler) OnEncryptionResponse(packetReader io.Reader) err
 	}
 
 	pph.player.UUID = *verificationResult.UUID
+	pph.player.Textures = verificationResult.Textures
+	pph.player.TexturesSignature = verificationResult.TexturesSignature
 
 	err = pph.setupEncryption()
 	if err != nil {
@@ -445,6 +456,11 @@ func (pph *PlayerPacketHandler) OnJoin() error {
 	}
 
 	err = pph.sendSpawnPosition()
+	if err != nil {
+		return err
+	}
+
+	err = pph.sendPlayerListUpdate([]*Player{pph.player})
 	if err != nil {
 		return err
 	}
