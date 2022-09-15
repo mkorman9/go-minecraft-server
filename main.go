@@ -12,7 +12,7 @@ func main() {
 	log.SetFlags(log.LstdFlags | log.Lshortfile)
 
 	settings := &Settings{
-		ServerAddress:        "0.0.0.0:9000",
+		ServerAddress:        "0.0.0.0:25565",
 		Description:          "Simple Go Server",
 		MaxPlayers:           2137,
 		OnlineMode:           false,
