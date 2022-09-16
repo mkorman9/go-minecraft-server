@@ -62,8 +62,9 @@ func (pd *PacketDefinition) Read(reader io.Reader) (*PacketData, error) {
 
 		switch field.Type {
 		case TypeArray:
-			var length int
-			if field.ArrayLengthOption == ArrayLengthPrefixed {
+			length := field.ArrayLengthOption(packet)
+
+			if length == arrayLengthPrefix {
 				length, err = readVarInt(reader)
 				if err != nil {
 					return nil, err

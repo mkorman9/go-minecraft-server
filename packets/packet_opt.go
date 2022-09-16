@@ -1,12 +1,5 @@
 package packets
 
-type ArrayLengthOption = int
-
-const (
-	ArrayLengthStatic = iota
-	ArrayLengthPrefixed
-)
-
 type PacketOpt = func(*PacketDefinition)
 
 type PacketFieldOpt = func(data *PacketData) bool
