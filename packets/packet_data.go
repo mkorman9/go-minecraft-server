@@ -139,7 +139,9 @@ func (pd *PacketData) Array(name string) ArrayValue {
 func (pd *PacketData) Byte(name string) byte {
 	if i, ok := pd.namesMapping[name]; ok {
 		if pd.Fields[i].Type == TypeByte {
-			return pd.Fields[i].Value.(byte)
+			if value, ok := pd.Fields[i].Value.(byte); ok {
+				return value
+			}
 		}
 	}
 
@@ -159,7 +161,11 @@ func (pd *PacketData) Bool(name string) bool {
 func (pd *PacketData) Int16(name string) int16 {
 	if i, ok := pd.namesMapping[name]; ok {
 		if pd.Fields[i].Type == TypeInt16 {
-			return pd.Fields[i].Value.(int16)
+			if value, ok := pd.Fields[i].Value.(int16); ok {
+				return value
+			} else if value, ok := pd.Fields[i].Value.(byte); ok {
+				return int16(value)
+			}
 		}
 	}
 
@@ -169,7 +175,13 @@ func (pd *PacketData) Int16(name string) int16 {
 func (pd *PacketData) Int32(name string) int32 {
 	if i, ok := pd.namesMapping[name]; ok {
 		if pd.Fields[i].Type == TypeInt32 {
-			return pd.Fields[i].Value.(int32)
+			if value, ok := pd.Fields[i].Value.(int32); ok {
+				return value
+			} else if value, ok := pd.Fields[i].Value.(int16); ok {
+				return int32(value)
+			} else if value, ok := pd.Fields[i].Value.(byte); ok {
+				return int32(value)
+			}
 		}
 	}
 
@@ -179,7 +191,13 @@ func (pd *PacketData) Int32(name string) int32 {
 func (pd *PacketData) Int64(name string) int64 {
 	if i, ok := pd.namesMapping[name]; ok {
 		if pd.Fields[i].Type == TypeInt64 {
-			return pd.Fields[i].Value.(int64)
+			if value, ok := pd.Fields[i].Value.(int64); ok {
+				return value
+			} else if value, ok := pd.Fields[i].Value.(int32); ok {
+				return int64(value)
+			} else if value, ok := pd.Fields[i].Value.(int16); ok {
+				return int64(value)
+			}
 		}
 	}
 
@@ -189,7 +207,9 @@ func (pd *PacketData) Int64(name string) int64 {
 func (pd *PacketData) VarInt(name string) int {
 	if i, ok := pd.namesMapping[name]; ok {
 		if pd.Fields[i].Type == TypeVarInt {
-			return pd.Fields[i].Value.(int)
+			if value, ok := pd.Fields[i].Value.(int); ok {
+				return value
+			}
 		}
 	}
 
@@ -199,7 +219,9 @@ func (pd *PacketData) VarInt(name string) int {
 func (pd *PacketData) Float32(name string) float32 {
 	if i, ok := pd.namesMapping[name]; ok {
 		if pd.Fields[i].Type == TypeFloat32 {
-			return pd.Fields[i].Value.(float32)
+			if value, ok := pd.Fields[i].Value.(float32); ok {
+				return value
+			}
 		}
 	}
 
@@ -209,7 +231,11 @@ func (pd *PacketData) Float32(name string) float32 {
 func (pd *PacketData) Float64(name string) float64 {
 	if i, ok := pd.namesMapping[name]; ok {
 		if pd.Fields[i].Type == TypeFloat64 {
-			return pd.Fields[i].Value.(float64)
+			if value, ok := pd.Fields[i].Value.(float64); ok {
+				return value
+			} else if value, ok := pd.Fields[i].Value.(float32); ok {
+				return float64(value)
+			}
 		}
 	}
 
@@ -219,7 +245,9 @@ func (pd *PacketData) Float64(name string) float64 {
 func (pd *PacketData) UUID(name string) UUID {
 	if i, ok := pd.namesMapping[name]; ok {
 		if pd.Fields[i].Type == TypeUUID {
-			return pd.Fields[i].Value.(UUID)
+			if value, ok := pd.Fields[i].Value.(UUID); ok {
+				return value
+			}
 		}
 	}
 
@@ -229,7 +257,9 @@ func (pd *PacketData) UUID(name string) UUID {
 func (pd *PacketData) VarLong(name string) int64 {
 	if i, ok := pd.namesMapping[name]; ok {
 		if pd.Fields[i].Type == TypeVarLong {
-			return pd.Fields[i].Value.(int64)
+			if value, ok := pd.Fields[i].Value.(int64); ok {
+				return value
+			}
 		}
 	}
 
@@ -239,7 +269,11 @@ func (pd *PacketData) VarLong(name string) int64 {
 func (pd *PacketData) ByteArray(name string) []byte {
 	if i, ok := pd.namesMapping[name]; ok {
 		if pd.Fields[i].Type == TypeByteArray {
-			return pd.Fields[i].Value.([]byte)
+			if value, ok := pd.Fields[i].Value.([]byte); ok {
+				return value
+			} else if value, ok := pd.Fields[i].Value.(string); ok {
+				return []byte(value)
+			}
 		}
 	}
 
@@ -249,7 +283,11 @@ func (pd *PacketData) ByteArray(name string) []byte {
 func (pd *PacketData) String(name string) string {
 	if i, ok := pd.namesMapping[name]; ok {
 		if pd.Fields[i].Type == TypeString {
-			return pd.Fields[i].Value.(string)
+			if value, ok := pd.Fields[i].Value.(string); ok {
+				return value
+			} else if value, ok := pd.Fields[i].Value.([]byte); ok {
+				return string(value)
+			}
 		}
 	}
 
@@ -269,7 +307,9 @@ func (pd *PacketData) NBT(name string) any {
 func (pd *PacketData) Position(name string) Position {
 	if i, ok := pd.namesMapping[name]; ok {
 		if pd.Fields[i].Type == TypePosition {
-			return pd.Fields[i].Value.(Position)
+			if value, ok := pd.Fields[i].Value.(Position); ok {
+				return value
+			}
 		}
 	}
 
@@ -279,7 +319,9 @@ func (pd *PacketData) Position(name string) Position {
 func (pd *PacketData) Slot(name string) SlotData {
 	if i, ok := pd.namesMapping[name]; ok {
 		if pd.Fields[i].Type == TypeSlot {
-			return pd.Fields[i].Value.(SlotData)
+			if value, ok := pd.Fields[i].Value.(SlotData); ok {
+				return value
+			}
 		}
 	}
 
@@ -289,7 +331,9 @@ func (pd *PacketData) Slot(name string) SlotData {
 func (pd *PacketData) BitSet(name string) BitSet {
 	if i, ok := pd.namesMapping[name]; ok {
 		if pd.Fields[i].Type == TypeBitSet {
-			return pd.Fields[i].Value.(BitSet)
+			if value, ok := pd.Fields[i].Value.(BitSet); ok {
+				return value
+			}
 		}
 	}
 
