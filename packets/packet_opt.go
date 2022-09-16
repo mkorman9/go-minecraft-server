@@ -11,6 +11,10 @@ type PacketOpt = func(*PacketDefinition)
 
 type PacketFieldOpt = func(data *PacketData) bool
 
+func Fields(opts ...PacketOpt) []PacketOpt {
+	return opts
+}
+
 func ID(id int) PacketOpt {
 	return func(packet *PacketDefinition) {
 		packet.PacketID = id

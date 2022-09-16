@@ -162,7 +162,7 @@ var PlayerInfoPacket = packets.Packet(
 	packets.ArrayWithOptions(
 		"playersToAdd",
 		packets.ArrayLengthPrefixed,
-		[]packets.PacketOpt{
+		packets.Fields(
 			packets.UUIDField("uuid"),
 			packets.String("name"),
 			packets.Array(
@@ -181,43 +181,43 @@ var PlayerInfoPacket = packets.Packet(
 			packets.Int64("timestamp", packets.OnlyIfTrue("hasSigData")),
 			packets.ByteArray("publicKey", packets.OnlyIfTrue("hasSigData")),
 			packets.String("signature", packets.OnlyIfTrue("hasSigData")),
-		},
+		),
 		packets.OnlyIfEqual("actionId", 0),
 	),
 	packets.ArrayWithOptions(
 		"playersToUpdateGameMode",
 		packets.ArrayLengthPrefixed,
-		[]packets.PacketOpt{
+		packets.Fields(
 			packets.UUIDField("uuid"),
 			packets.VarInt("gameMode"),
-		},
+		),
 		packets.OnlyIfEqual("actionId", 1),
 	),
 	packets.ArrayWithOptions(
 		"playersToUpdateLatency",
 		packets.ArrayLengthPrefixed,
-		[]packets.PacketOpt{
+		packets.Fields(
 			packets.UUIDField("uuid"),
 			packets.VarInt("ping"),
-		},
+		),
 		packets.OnlyIfEqual("actionId", 2),
 	),
 	packets.ArrayWithOptions(
 		"playersToUpdateDisplayName",
 		packets.ArrayLengthPrefixed,
-		[]packets.PacketOpt{
+		packets.Fields(
 			packets.UUIDField("uuid"),
 			packets.Bool("hasDisplayName"),
 			packets.String("displayName", packets.OnlyIfTrue("hasDisplayName")),
-		},
+		),
 		packets.OnlyIfEqual("actionId", 3),
 	),
 	packets.ArrayWithOptions(
 		"playersToRemove",
 		packets.ArrayLengthPrefixed,
-		[]packets.PacketOpt{
+		packets.Fields(
 			packets.UUIDField("uuid"),
-		},
+		),
 		packets.OnlyIfEqual("actionId", 4),
 	),
 )
