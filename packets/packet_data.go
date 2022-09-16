@@ -129,7 +129,9 @@ func (pd *PacketData) Any(name string) any {
 func (pd *PacketData) Array(name string) ArrayValue {
 	if i, ok := pd.namesMapping[name]; ok {
 		if pd.Fields[i].Type == TypeArray {
-			return pd.Fields[i].Value.(ArrayValue)
+			if value, ok := pd.Fields[i].Value.(ArrayValue); ok {
+				return value
+			}
 		}
 	}
 
