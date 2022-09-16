@@ -18,12 +18,12 @@ func NewPacketWriter(writer io.Writer) *PacketWriter {
 	}
 }
 
-func (pw *PacketWriter) SetWriter(writer io.Writer) {
-	pw.writer = writer
-}
-
 func (pw *PacketWriter) SetCompression(threshold int) {
 	pw.compressionThreshold = threshold
+}
+
+func (pw *PacketWriter) SetEncryption(cipherStream *CipherStream) {
+	pw.writer = cipherStream.WrapWriter(pw.writer)
 }
 
 func (pw *PacketWriter) Write(packet *PacketData) error {

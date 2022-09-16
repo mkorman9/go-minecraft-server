@@ -38,7 +38,6 @@ type PlayerPacketHandler struct {
 	world        *World
 	connection   net.Conn
 	state        PlayerState
-	reader       io.Reader
 	packetReader *packets.PacketReader
 	packetWriter *packets.PacketWriter
 
@@ -58,8 +57,7 @@ func NewPlayerPacketHandler(player *Player, world *World, connection net.Conn, i
 		world:                       world,
 		connection:                  connection,
 		state:                       PlayerStateBeforeHandshake,
-		reader:                      connection,
-		packetReader:                packets.NewPacketReader(),
+		packetReader:                packets.NewPacketReader(connection),
 		packetWriter:                packets.NewPacketWriter(connection),
 		ip:                          ip,
 		enabledCompressionThreshold: -1,
@@ -75,7 +73,7 @@ func (pph *PlayerPacketHandler) ReadLoop() {
 	}()
 
 	for {
-		packetDelivery, err := pph.packetReader.Read(pph.reader)
+		packetDelivery, err := pph.packetReader.Read()
 		if err != nil {
 			if err == io.EOF {
 				break
@@ -103,14 +101,14 @@ func (pph *PlayerPacketHandler) ReadLoop() {
 }
 
 func (pph *PlayerPacketHandler) setupEncryption() error {
-	cipherStream, err := NewCipherStream(pph.sharedSecret)
+	cipherStream, err := packets.NewCipherStream(pph.sharedSecret)
 	if err != nil {
 		log.Printf("%v\n", err)
 		return err
 	}
 
-	pph.reader = cipherStream.WrapReader(pph.connection)
-	pph.packetWriter.SetWriter(cipherStream.WrapWriter(pph.connection))
+	pph.packetReader.SetEncryption(cipherStream)
+	pph.packetWriter.SetEncryption(cipherStream)
 
 	return nil
 }

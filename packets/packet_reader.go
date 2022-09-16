@@ -14,6 +14,7 @@ type PacketDelivery struct {
 }
 
 type PacketReader struct {
+	reader               io.Reader
 	compressionThreshold int
 }
 
@@ -23,8 +24,9 @@ type PacketHeader struct {
 	UseCompression       bool
 }
 
-func NewPacketReader() *PacketReader {
+func NewPacketReader(reader io.Reader) *PacketReader {
 	return &PacketReader{
+		reader:               reader,
 		compressionThreshold: -1,
 	}
 }
@@ -33,14 +35,18 @@ func (pr *PacketReader) SetCompression(threshold int) {
 	pr.compressionThreshold = threshold
 }
 
-func (pr *PacketReader) Read(reader io.Reader) (*PacketDelivery, error) {
-	header, err := pr.readHeader(reader)
+func (pr *PacketReader) SetEncryption(cipherStream *CipherStream) {
+	pr.reader = cipherStream.WrapReader(pr.reader)
+}
+
+func (pr *PacketReader) Read() (*PacketDelivery, error) {
+	header, err := pr.readHeader()
 	if err != nil {
 		return nil, err
 	}
 
 	packetData := make([]byte, header.PacketSize)
-	_, err = reader.Read(packetData)
+	_, err = pr.reader.Read(packetData)
 	if err != nil {
 		return nil, err
 	}
@@ -74,11 +80,11 @@ func (pr *PacketReader) Read(reader io.Reader) (*PacketDelivery, error) {
 	}, nil
 }
 
-func (pr *PacketReader) readHeader(reader io.Reader) (*PacketHeader, error) {
+func (pr *PacketReader) readHeader() (*PacketHeader, error) {
 	switch pr.compressionThreshold {
 	case -1:
 		// no compression
-		packetSize, err := readVarInt(reader)
+		packetSize, err := readVarInt(pr.reader)
 		if err != nil {
 			return nil, err
 		}
@@ -94,12 +100,12 @@ func (pr *PacketReader) readHeader(reader io.Reader) (*PacketHeader, error) {
 		}, nil
 	default:
 		// compression
-		compressedDataSize, err := readVarInt(reader)
+		compressedDataSize, err := readVarInt(pr.reader)
 		if err != nil {
 			return nil, err
 		}
 
-		uncompressedDataSize, err := readVarInt(reader)
+		uncompressedDataSize, err := readVarInt(pr.reader)
 		if err != nil {
 			return nil, err
 		}
