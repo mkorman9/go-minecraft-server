@@ -3,14 +3,14 @@ package main
 import "encoding/json"
 
 type ChatMessage struct {
-	Text            string        `json:"text"`
-	IsBold          bool          `json:"bold,omitempty"`
-	IsItalic        bool          `json:"italic,omitempty"`
-	IsUnderlined    bool          `json:"underlined,omitempty"`
-	IsStrikethrough bool          `json:"strikethrough,omitempty"`
-	IsObfuscated    bool          `json:"obfuscated,omitempty"`
-	FontName        string        `json:"font,omitempty"`
-	Extra           []ChatMessage `json:"extra,omitempty"`
+	Text            string         `json:"text"`
+	IsBold          bool           `json:"bold,omitempty"`
+	IsItalic        bool           `json:"italic,omitempty"`
+	IsUnderlined    bool           `json:"underlined,omitempty"`
+	IsStrikethrough bool           `json:"strikethrough,omitempty"`
+	IsObfuscated    bool           `json:"obfuscated,omitempty"`
+	FontName        string         `json:"font,omitempty"`
+	Extra           []*ChatMessage `json:"extra,omitempty"`
 }
 
 const (
@@ -51,6 +51,11 @@ func (cm *ChatMessage) Obfuscated() *ChatMessage {
 
 func (cm *ChatMessage) Font(font string) *ChatMessage {
 	cm.FontName = font
+	return cm
+}
+
+func (cm *ChatMessage) Append(msg *ChatMessage) *ChatMessage {
+	cm.Extra = append(cm.Extra, msg)
 	return cm
 }
 
