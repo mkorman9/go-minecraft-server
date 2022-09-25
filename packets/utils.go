@@ -1,16 +1,17 @@
 package packets
 
-import "bytes"
-
 func getVarIntSize(value int) int {
-	var buff bytes.Buffer
+	size := 0
 
-	_, _ = Packet(
-		VarInt("a"),
-	).
-		New().
-		Set("a", value).
-		WriteTo(&buff)
+	for {
+		if (value & ^SegmentBits) == 0 {
+			size++
+			break
+		}
 
-	return buff.Len()
+		size++
+		value >>= 7
+	}
+
+	return size
 }
