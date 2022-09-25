@@ -32,6 +32,7 @@ func NewServer(settings *Settings) (*Server, error) {
 		listener: listener,
 	}, nil
 }
+
 func (s *Server) PublicKey() []byte {
 	return s.key.publicDER
 }

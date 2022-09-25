@@ -75,5 +75,7 @@ func (pl *PlayerList) Copy() []*Player {
 	pl.m.RLock()
 	defer pl.m.RUnlock()
 
-	return pl.list[:]
+	l := make([]*Player, len(pl.list))
+	copy(l, pl.list)
+	return l
 }

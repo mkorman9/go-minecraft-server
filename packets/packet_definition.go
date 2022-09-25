@@ -37,10 +37,18 @@ func (pd *PacketDefinition) SetBlueprint(name string, blueprint any) {
 }
 
 func (pd *PacketDefinition) New() *PacketData {
+	fields := make([]*Field, len(pd.Fields))
+	copy(fields, pd.Fields)
+
+	namesMapping := make(map[string]int)
+	for name, field := range pd.namesMapping {
+		namesMapping[name] = field
+	}
+
 	return &PacketData{
 		PacketID:     pd.PacketID,
-		Fields:       pd.Fields[:],
-		namesMapping: pd.namesMapping,
+		Fields:       fields,
+		namesMapping: namesMapping,
 	}
 }
 
