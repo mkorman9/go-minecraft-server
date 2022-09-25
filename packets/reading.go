@@ -175,9 +175,11 @@ func readNBT(reader io.Reader, blueprint any) (any, error) {
 
 	_, err := nbt.NewDecoder(reader).Decode(&obj)
 	if err != nil {
-		if !errors.Is(err, nbt.ErrEND) {
-			return nil, err
+		if errors.Is(err, nbt.ErrEND) {
+			return nil, nil
 		}
+
+		return nil, err
 	}
 
 	return obj, nil
@@ -215,8 +217,8 @@ func readSlot(reader io.Reader) (slot SlotData, err error) {
 			return
 		}
 
-		if rawMessage, ok := tags.(*nbt.RawMessage); ok {
-			slot.NBT = rawMessage
+		if tags != nil {
+			slot.NBT = tags.(*nbt.RawMessage)
 		}
 	}
 
