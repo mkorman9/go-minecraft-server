@@ -97,6 +97,13 @@ func (pph *PlayerPacketHandler) ReadLoop() {
 			log.Printf("%v\n", err)
 			break
 		}
+
+		// discard the remaining (unread) part of data before reading next packet
+		_, err = io.Copy(io.Discard, packetDelivery.Reader)
+		if err != nil {
+			log.Printf("%v\n", err)
+			break
+		}
 	}
 }
 
