@@ -83,5 +83,5 @@ type SlotData struct {
 	Present   bool
 	ItemID    int
 	ItemCount byte
-	NBT       nbt.RawMessage
+	NBT       *nbt.RawMessage
 }

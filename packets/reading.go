@@ -214,7 +214,10 @@ func readSlot(reader io.Reader) (slot SlotData, err error) {
 			err = e
 			return
 		}
-		slot.NBT = *tags.(*nbt.RawMessage)
+
+		if rawMessage, ok := tags.(*nbt.RawMessage); ok {
+			slot.NBT = rawMessage
+		}
 	}
 
 	return

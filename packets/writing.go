@@ -143,7 +143,7 @@ func writeSlot(writer io.Writer, slot *SlotData) error {
 			return err
 		}
 
-		err = writeNBT(writer, &slot.NBT)
+		err = writeNBT(writer, slot.NBT)
 		if err != nil {
 			return err
 		}
