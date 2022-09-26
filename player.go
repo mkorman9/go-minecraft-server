@@ -88,10 +88,26 @@ func (p *Player) SendKeepAlive(keepAliveID int64) {
 	_ = p.packetHandler.SendKeepAlive(keepAliveID)
 }
 
+func (p *Player) SendAnotherPlayerJoined(player *Player) {
+	_ = p.packetHandler.sendPlayersAdded([]*Player{player})
+}
+
+func (p *Player) SendAnotherPlayerDisconnected(player *Player) {
+	_ = p.packetHandler.sendPlayersRemoved([]*Player{player})
+}
+
 func (p *Player) OnJoin(gameMode GameMode) {
+	p.world.BroadcastPlayerJoined(p)
+
 	p.world.JoinPlayer(p)
 	p.GameMode = gameMode
 	p.lastHeartbeat = time.Now()
+}
+
+func (p *Player) OnDisconnect() {
+	p.world.RemovePlayer(p)
+
+	p.world.BroadcastPlayerDisconnected(p)
 }
 
 func (p *Player) OnClientSettings(clientSettings *PlayerClientSettings) {

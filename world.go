@@ -85,9 +85,21 @@ func (w *World) GetStatus() *ServerStatus {
 }
 
 func (w *World) BroadcastKeepAlive() {
-	w.PlayerList().All(func(player *Player) {
+	w.PlayerList().All(func(p *Player) {
 		keepAliveID := rand.Int63()
-		player.SendKeepAlive(keepAliveID)
+		p.SendKeepAlive(keepAliveID)
+	})
+}
+
+func (w *World) BroadcastPlayerJoined(player *Player) {
+	w.PlayerList().All(func(p *Player) {
+		p.SendAnotherPlayerJoined(player)
+	})
+}
+
+func (w *World) BroadcastPlayerDisconnected(player *Player) {
+	w.PlayerList().All(func(p *Player) {
+		p.SendAnotherPlayerDisconnected(player)
 	})
 }
 

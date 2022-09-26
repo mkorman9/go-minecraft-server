@@ -68,7 +68,6 @@ func NewPlayerPacketHandler(player *Player, world *World, connection net.Conn, i
 
 func (pph *PlayerPacketHandler) ReadLoop() {
 	defer func() {
-		pph.world.RemovePlayer(pph.player)
 		pph.Cancel(nil)
 	}()
 
@@ -105,6 +104,29 @@ func (pph *PlayerPacketHandler) ReadLoop() {
 			break
 		}
 	}
+}
+
+func (pph *PlayerPacketHandler) Cancel(reason *ChatMessage) {
+	pph.canceledMutex.Lock()
+	if pph.canceled {
+		return
+	}
+	pph.canceled = true
+	pph.canceledMutex.Unlock()
+
+	switch pph.state {
+	case PlayerStateBeforeHandshake:
+		// nop
+	case PlayerStateLogin:
+		_ = pph.sendCancelLogin(reason)
+	case PlayerStateEncryption:
+		_ = pph.sendCancelLogin(reason)
+	case PlayerStatePlay:
+		_ = pph.sendDisconnect(reason)
+		pph.player.OnDisconnect()
+	}
+
+	_ = pph.connection.Close()
 }
 
 func (pph *PlayerPacketHandler) setupEncryption() error {

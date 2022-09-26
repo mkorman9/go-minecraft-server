@@ -5,28 +5,6 @@ import (
 	"log"
 )
 
-func (pph *PlayerPacketHandler) Cancel(reason *ChatMessage) {
-	pph.canceledMutex.Lock()
-	if pph.canceled {
-		return
-	}
-	pph.canceled = true
-	pph.canceledMutex.Unlock()
-
-	switch pph.state {
-	case PlayerStateBeforeHandshake:
-		// nop
-	case PlayerStateLogin:
-		_ = pph.sendCancelLogin(reason)
-	case PlayerStateEncryption:
-		_ = pph.sendCancelLogin(reason)
-	case PlayerStatePlay:
-		_ = pph.sendDisconnect(reason)
-	}
-
-	_ = pph.connection.Close()
-}
-
 func (pph *PlayerPacketHandler) SendSystemChatMessage(message *ChatMessage) error {
 	return pph.sendSystemChatMessage(message)
 }
@@ -216,6 +194,20 @@ func (pph *PlayerPacketHandler) sendPlayersAdded(players []*Player) error {
 					Set("timestamp", player.Timestamp).
 					Set("publicKey", player.PublicKeyDER).
 					Set("signature", player.Signature)
+			}),
+		)
+
+	return pph.packetWriter.Write(playerInfoPacket)
+}
+
+func (pph *PlayerPacketHandler) sendPlayersRemoved(players []*Player) error {
+	playerInfoPacket := PlayerInfoPacket.
+		New().
+		Set("actionId", 4).
+		SetArray(
+			"playersToRemove",
+			packets.ConvertArrayValue(players, func(player *Player, packet *packets.PacketData) {
+				packet.Set("uuid", player.UUID)
 			}),
 		)
 
