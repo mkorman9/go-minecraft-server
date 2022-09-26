@@ -1,6 +1,6 @@
-package packets
+package types
 
-func getVarIntSize(value int) int {
+func GetVarIntSize(value int) int {
 	size := 0
 
 	for {

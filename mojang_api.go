@@ -3,14 +3,14 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/mkorman9/go-minecraft-server/packets"
+	"github.com/mkorman9/go-minecraft-server/types"
 	"net/http"
 	"time"
 )
 
 type MojangPlayerVerification struct {
 	Verified          bool
-	UUID              *packets.UUID
+	UUID              *types.UUID
 	Textures          string
 	TexturesSignature string
 }

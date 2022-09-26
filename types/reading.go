@@ -1,4 +1,4 @@
-package packets
+package types
 
 import (
 	"encoding/binary"
@@ -9,7 +9,7 @@ import (
 	"reflect"
 )
 
-func readByte(reader io.Reader) (byte, error) {
+func ReadByte(reader io.Reader) (byte, error) {
 	buff := make([]byte, 1)
 
 	_, err := reader.Read(buff)
@@ -20,14 +20,14 @@ func readByte(reader io.Reader) (byte, error) {
 	return buff[0], nil
 }
 
-func readBytes(reader io.Reader, n int) ([]byte, error) {
+func ReadBytes(reader io.Reader, n int) ([]byte, error) {
 	buff := make([]byte, n)
 	_, err := reader.Read(buff)
 	return buff, err
 }
 
-func readBool(reader io.Reader) (bool, error) {
-	value, err := readByte(reader)
+func ReadBool(reader io.Reader) (bool, error) {
+	value, err := ReadByte(reader)
 	if err != nil {
 		return false, err
 	}
@@ -39,8 +39,8 @@ func readBool(reader io.Reader) (bool, error) {
 	}
 }
 
-func readInt16(reader io.Reader) (int16, error) {
-	b, err := readBytes(reader, 2)
+func ReadInt16(reader io.Reader) (int16, error) {
+	b, err := ReadBytes(reader, 2)
 	if err != nil {
 		return 0, err
 	}
@@ -48,8 +48,8 @@ func readInt16(reader io.Reader) (int16, error) {
 	return int16(binary.BigEndian.Uint16(b)), nil
 }
 
-func readInt32(reader io.Reader) (int32, error) {
-	b, err := readBytes(reader, 4)
+func ReadInt32(reader io.Reader) (int32, error) {
+	b, err := ReadBytes(reader, 4)
 	if err != nil {
 		return 0, err
 	}
@@ -57,8 +57,8 @@ func readInt32(reader io.Reader) (int32, error) {
 	return int32(binary.BigEndian.Uint32(b)), nil
 }
 
-func readInt64(reader io.Reader) (int64, error) {
-	b, err := readBytes(reader, 8)
+func ReadInt64(reader io.Reader) (int64, error) {
+	b, err := ReadBytes(reader, 8)
 	if err != nil {
 		return 0, err
 	}
@@ -66,12 +66,12 @@ func readInt64(reader io.Reader) (int64, error) {
 	return int64(binary.BigEndian.Uint64(b)), nil
 }
 
-func readVarInt(reader io.Reader) (int, error) {
+func ReadVarInt(reader io.Reader) (int, error) {
 	var value int
 	var position int
 
 	for {
-		currentByte, err := readByte(reader)
+		currentByte, err := ReadByte(reader)
 		if err != nil {
 			return 0, err
 		}
@@ -92,12 +92,12 @@ func readVarInt(reader io.Reader) (int, error) {
 	return value, nil
 }
 
-func readVarLong(reader io.Reader) (int64, error) {
+func ReadVarLong(reader io.Reader) (int64, error) {
 	var value int64
 	var position int64
 
 	for {
-		currentByte, err := readByte(reader)
+		currentByte, err := ReadByte(reader)
 		if err != nil {
 			return 0, err
 		}
@@ -118,8 +118,8 @@ func readVarLong(reader io.Reader) (int64, error) {
 	return value, nil
 }
 
-func readFloat32(reader io.Reader) (float32, error) {
-	value, err := readInt32(reader)
+func ReadFloat32(reader io.Reader) (float32, error) {
+	value, err := ReadInt32(reader)
 	if err != nil {
 		return 0, err
 	}
@@ -127,8 +127,8 @@ func readFloat32(reader io.Reader) (float32, error) {
 	return math.Float32frombits(uint32(value)), nil
 }
 
-func readFloat64(reader io.Reader) (float64, error) {
-	value, err := readInt64(reader)
+func ReadFloat64(reader io.Reader) (float64, error) {
+	value, err := ReadInt64(reader)
 	if err != nil {
 		return 0, err
 	}
@@ -136,13 +136,13 @@ func readFloat64(reader io.Reader) (float64, error) {
 	return math.Float64frombits(uint64(value)), nil
 }
 
-func readUUID(reader io.Reader) (UUID, error) {
-	upper, err := readInt64(reader)
+func ReadUUID(reader io.Reader) (UUID, error) {
+	upper, err := ReadInt64(reader)
 	if err != nil {
 		return UUID{}, err
 	}
 
-	lower, err := readInt64(reader)
+	lower, err := ReadInt64(reader)
 	if err != nil {
 		return UUID{}, err
 	}
@@ -150,8 +150,8 @@ func readUUID(reader io.Reader) (UUID, error) {
 	return UUID{Upper: upper, Lower: lower}, nil
 }
 
-func readByteArray(reader io.Reader) ([]byte, error) {
-	length, err := readVarInt(reader)
+func ReadByteArray(reader io.Reader) ([]byte, error) {
+	length, err := ReadVarInt(reader)
 	if err != nil {
 		return nil, err
 	}
@@ -161,8 +161,8 @@ func readByteArray(reader io.Reader) ([]byte, error) {
 	return buff, err
 }
 
-func readString(reader io.Reader) (string, error) {
-	b, err := readByteArray(reader)
+func ReadString(reader io.Reader) (string, error) {
+	b, err := ReadByteArray(reader)
 	if err != nil {
 		return "", err
 	}
@@ -170,7 +170,7 @@ func readString(reader io.Reader) (string, error) {
 	return string(b), nil
 }
 
-func readNBT(reader io.Reader, blueprint any) (any, error) {
+func ReadNBT(reader io.Reader, blueprint any) (any, error) {
 	obj := reflect.New(reflect.TypeOf(blueprint))
 
 	_, err := nbt.NewDecoder(reader).Decode(&obj)
@@ -185,8 +185,8 @@ func readNBT(reader io.Reader, blueprint any) (any, error) {
 	return obj, nil
 }
 
-func readPosition(reader io.Reader) (Position, error) {
-	value, err := readInt64(reader)
+func ReadPosition(reader io.Reader) (Position, error) {
+	value, err := ReadInt64(reader)
 	if err != nil {
 		return Position{}, err
 	}
@@ -194,24 +194,24 @@ func readPosition(reader io.Reader) (Position, error) {
 	return PositionFromInt64(value), nil
 }
 
-func readSlot(reader io.Reader) (slot SlotData, err error) {
-	slot.Present, err = readBool(reader)
+func ReadSlot(reader io.Reader) (slot SlotData, err error) {
+	slot.Present, err = ReadBool(reader)
 	if err != nil {
 		return
 	}
 
 	if slot.Present {
-		slot.ItemID, err = readVarInt(reader)
+		slot.ItemID, err = ReadVarInt(reader)
 		if err != nil {
 			return
 		}
 
-		slot.ItemCount, err = readByte(reader)
+		slot.ItemCount, err = ReadByte(reader)
 		if err != nil {
 			return
 		}
 
-		tags, e := readNBT(reader, &nbt.RawMessage{})
+		tags, e := ReadNBT(reader, &nbt.RawMessage{})
 		if e != nil {
 			err = e
 			return
@@ -225,15 +225,15 @@ func readSlot(reader io.Reader) (slot SlotData, err error) {
 	return
 }
 
-func readBitSet(reader io.Reader) (BitSet, error) {
-	length, err := readVarInt(reader)
+func ReadBitSet(reader io.Reader) (BitSet, error) {
+	length, err := ReadVarInt(reader)
 	if err != nil {
 		return BitSet{}, err
 	}
 
 	var bitSet BitSet
 	for i := 0; i < length; i++ {
-		value, err := readInt64(reader)
+		value, err := ReadInt64(reader)
 		if err != nil {
 			return BitSet{}, err
 		}

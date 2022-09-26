@@ -3,6 +3,7 @@ package packets
 import (
 	"bytes"
 	"compress/zlib"
+	"github.com/mkorman9/go-minecraft-server/types"
 	"io"
 )
 
@@ -37,7 +38,7 @@ func (pw *PacketWriter) Write(packet *PacketData) error {
 	switch pw.compressionThreshold {
 	case -1:
 		// no compression
-		err = writeVarInt(pw.writer, packetData.Len())
+		err = types.WriteVarInt(pw.writer, packetData.Len())
 		if err != nil {
 			return err
 		}
@@ -62,12 +63,12 @@ func (pw *PacketWriter) Write(packet *PacketData) error {
 				return err
 			}
 
-			err = writeVarInt(pw.writer, getVarIntSize(packetData.Len())+zlibBuffer.Len())
+			err = types.WriteVarInt(pw.writer, types.GetVarIntSize(packetData.Len())+zlibBuffer.Len())
 			if err != nil {
 				return err
 			}
 
-			err = writeVarInt(pw.writer, packetData.Len())
+			err = types.WriteVarInt(pw.writer, packetData.Len())
 			if err != nil {
 				return err
 			}
@@ -77,12 +78,12 @@ func (pw *PacketWriter) Write(packet *PacketData) error {
 				return err
 			}
 		} else {
-			err = writeVarInt(pw.writer, packetData.Len()+1)
+			err = types.WriteVarInt(pw.writer, packetData.Len()+1)
 			if err != nil {
 				return err
 			}
 
-			err = writeVarInt(pw.writer, 0)
+			err = types.WriteVarInt(pw.writer, 0)
 			if err != nil {
 				return err
 			}

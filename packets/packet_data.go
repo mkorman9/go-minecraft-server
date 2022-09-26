@@ -1,6 +1,7 @@
 package packets
 
 import (
+	"github.com/mkorman9/go-minecraft-server/types"
 	"io"
 )
 
@@ -29,7 +30,7 @@ func (pd *PacketData) SetArray(name string, value ConvertedArrayValue) *PacketDa
 
 func (pd *PacketData) WriteTo(writer io.Writer) (int64, error) {
 	if pd.PacketID != -1 {
-		err := writeVarInt(writer, pd.PacketID)
+		err := types.WriteVarInt(writer, pd.PacketID)
 		if err != nil {
 			return 0, err
 		}
@@ -54,7 +55,7 @@ func (pd *PacketData) WriteTo(writer io.Writer) (int64, error) {
 
 			if field.Value == nil {
 				if length == arrayLengthPrefix {
-					err := writeVarInt(writer, 0)
+					err := types.WriteVarInt(writer, 0)
 					if err != nil {
 						return 0, err
 					}
@@ -66,7 +67,7 @@ func (pd *PacketData) WriteTo(writer io.Writer) (int64, error) {
 			array := field.Value.(ArrayValue)
 
 			if length == arrayLengthPrefix {
-				err := writeVarInt(writer, len(array))
+				err := types.WriteVarInt(writer, len(array))
 				if err != nil {
 					return 0, err
 				}
@@ -79,37 +80,37 @@ func (pd *PacketData) WriteTo(writer io.Writer) (int64, error) {
 				}
 			}
 		case TypeByte:
-			err = writeByte(writer, field.Value.(byte))
+			err = types.WriteByte(writer, field.Value.(byte))
 		case TypeBool:
-			err = writeBool(writer, field.Value.(bool))
+			err = types.WriteBool(writer, field.Value.(bool))
 		case TypeInt16:
-			err = writeInt16(writer, field.Value.(int16))
+			err = types.WriteInt16(writer, field.Value.(int16))
 		case TypeInt32:
-			err = writeInt32(writer, field.Value.(int32))
+			err = types.WriteInt32(writer, field.Value.(int32))
 		case TypeInt64:
-			err = writeInt64(writer, field.Value.(int64))
+			err = types.WriteInt64(writer, field.Value.(int64))
 		case TypeVarInt:
-			err = writeVarInt(writer, field.Value.(int))
+			err = types.WriteVarInt(writer, field.Value.(int))
 		case TypeFloat32:
-			err = writeFloat32(writer, field.Value.(float32))
+			err = types.WriteFloat32(writer, field.Value.(float32))
 		case TypeFloat64:
-			err = writeFloat64(writer, field.Value.(float64))
+			err = types.WriteFloat64(writer, field.Value.(float64))
 		case TypeUUID:
-			err = writeUUID(writer, field.Value.(UUID))
+			err = types.WriteUUID(writer, field.Value.(types.UUID))
 		case TypeVarLong:
-			err = writeVarLong(writer, field.Value.(int64))
+			err = types.WriteVarLong(writer, field.Value.(int64))
 		case TypeByteArray:
-			err = writeByteArray(writer, field.Value.([]byte))
+			err = types.WriteByteArray(writer, field.Value.([]byte))
 		case TypeString:
-			err = writeString(writer, field.Value.(string))
+			err = types.WriteString(writer, field.Value.(string))
 		case TypeNBT:
-			err = writeNBT(writer, field.Value)
+			err = types.WriteNBT(writer, field.Value)
 		case TypePosition:
-			err = writePosition(writer, field.Value.(*Position))
+			err = types.WritePosition(writer, field.Value.(*types.Position))
 		case TypeSlot:
-			err = writeSlot(writer, field.Value.(*SlotData))
+			err = types.WriteSlot(writer, field.Value.(*types.SlotData))
 		case TypeBitSet:
-			err = writeBitSet(writer, field.Value.(*BitSet))
+			err = types.WriteBitSet(writer, field.Value.(*types.BitSet))
 		}
 
 		if err != nil {
@@ -246,16 +247,16 @@ func (pd *PacketData) Float64(name string) float64 {
 	return 0
 }
 
-func (pd *PacketData) UUID(name string) UUID {
+func (pd *PacketData) UUID(name string) types.UUID {
 	if i, ok := pd.namesMapping[name]; ok {
 		if pd.Fields[i].Type == TypeUUID {
-			if value, ok := pd.Fields[i].Value.(UUID); ok {
+			if value, ok := pd.Fields[i].Value.(types.UUID); ok {
 				return value
 			}
 		}
 	}
 
-	return UUID{0, 0}
+	return types.UUID{0, 0}
 }
 
 func (pd *PacketData) VarLong(name string) int64 {
@@ -308,38 +309,38 @@ func (pd *PacketData) NBT(name string) any {
 	return nil
 }
 
-func (pd *PacketData) Position(name string) Position {
+func (pd *PacketData) Position(name string) types.Position {
 	if i, ok := pd.namesMapping[name]; ok {
 		if pd.Fields[i].Type == TypePosition {
-			if value, ok := pd.Fields[i].Value.(Position); ok {
+			if value, ok := pd.Fields[i].Value.(types.Position); ok {
 				return value
 			}
 		}
 	}
 
-	return Position{}
+	return types.Position{}
 }
 
-func (pd *PacketData) Slot(name string) SlotData {
+func (pd *PacketData) Slot(name string) types.SlotData {
 	if i, ok := pd.namesMapping[name]; ok {
 		if pd.Fields[i].Type == TypeSlot {
-			if value, ok := pd.Fields[i].Value.(SlotData); ok {
+			if value, ok := pd.Fields[i].Value.(types.SlotData); ok {
 				return value
 			}
 		}
 	}
 
-	return SlotData{}
+	return types.SlotData{}
 }
 
-func (pd *PacketData) BitSet(name string) BitSet {
+func (pd *PacketData) BitSet(name string) types.BitSet {
 	if i, ok := pd.namesMapping[name]; ok {
 		if pd.Fields[i].Type == TypeBitSet {
-			if value, ok := pd.Fields[i].Value.(BitSet); ok {
+			if value, ok := pd.Fields[i].Value.(types.BitSet); ok {
 				return value
 			}
 		}
 	}
 
-	return BitSet{}
+	return types.BitSet{}
 }

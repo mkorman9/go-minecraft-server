@@ -2,7 +2,7 @@ package main
 
 import (
 	"crypto/rsa"
-	"github.com/mkorman9/go-minecraft-server/packets"
+	"github.com/mkorman9/go-minecraft-server/types"
 	"log"
 	"time"
 )
@@ -10,7 +10,7 @@ import (
 type Player struct {
 	Name              string
 	DisplayName       *ChatMessage
-	UUID              packets.UUID
+	UUID              types.UUID
 	EntityID          int32
 	IP                string
 	PublicKey         *rsa.PublicKey

@@ -9,7 +9,7 @@ import (
 	"encoding/binary"
 	"encoding/hex"
 	"github.com/gofrs/uuid"
-	"github.com/mkorman9/go-minecraft-server/packets"
+	"github.com/mkorman9/go-minecraft-server/types"
 	"net"
 	"strings"
 )
@@ -23,12 +23,12 @@ func getSecureRandomString(lengthBytes int) (string, error) {
 	return hex.EncodeToString(buff), nil
 }
 
-func getRandomUUID() packets.UUID {
+func getRandomUUID() types.UUID {
 	v, _ := uuid.NewV4()
 	upper := int64(binary.BigEndian.Uint64(v[:8]))
 	lower := int64(binary.BigEndian.Uint64(v[8:]))
 
-	return packets.UUID{
+	return types.UUID{
 		Upper: upper,
 		Lower: lower,
 	}
@@ -64,7 +64,7 @@ func parseRemoteAddress(connection net.Conn) string {
 	return address
 }
 
-func mojangIdToUUID(mojangId string) (*packets.UUID, error) {
+func mojangIdToUUID(mojangId string) (*types.UUID, error) {
 	upperPart := mojangId[:16]
 	lowerPart := mojangId[16:]
 
@@ -78,7 +78,7 @@ func mojangIdToUUID(mojangId string) (*packets.UUID, error) {
 		return nil, err
 	}
 
-	return &packets.UUID{
+	return &types.UUID{
 		Upper: int64(binary.BigEndian.Uint64(upperPartBytes)),
 		Lower: int64(binary.BigEndian.Uint64(lowerPartBytes)),
 	}, nil

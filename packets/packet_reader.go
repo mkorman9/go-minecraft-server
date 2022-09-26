@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"compress/zlib"
 	"errors"
+	"github.com/mkorman9/go-minecraft-server/types"
 	"io"
 )
 
@@ -69,7 +70,7 @@ func (pr *PacketReader) Read() (*PacketDelivery, error) {
 		packetReader = reader
 	}
 
-	packetId, err := readVarInt(packetReader)
+	packetId, err := types.ReadVarInt(packetReader)
 	if err != nil {
 		return nil, err
 	}
@@ -128,7 +129,7 @@ func (pr *PacketReader) readHeader() (*PacketHeader, error) {
 	switch pr.compressionThreshold {
 	case -1:
 		// no compression
-		packetSize, err := readVarInt(pr.reader)
+		packetSize, err := types.ReadVarInt(pr.reader)
 		if err != nil {
 			return nil, err
 		}
@@ -144,12 +145,12 @@ func (pr *PacketReader) readHeader() (*PacketHeader, error) {
 		}, nil
 	default:
 		// compression
-		compressedDataSize, err := readVarInt(pr.reader)
+		compressedDataSize, err := types.ReadVarInt(pr.reader)
 		if err != nil {
 			return nil, err
 		}
 
-		uncompressedDataSize, err := readVarInt(pr.reader)
+		uncompressedDataSize, err := types.ReadVarInt(pr.reader)
 		if err != nil {
 			return nil, err
 		}
@@ -158,7 +159,7 @@ func (pr *PacketReader) readHeader() (*PacketHeader, error) {
 			return nil, errors.New("invalid packet size")
 		}
 
-		compressedDataSize -= getVarIntSize(uncompressedDataSize)
+		compressedDataSize -= types.GetVarIntSize(uncompressedDataSize)
 
 		return &PacketHeader{
 			PacketSize:           compressedDataSize,
