@@ -59,6 +59,10 @@ func (pph *PlayerPacketHandler) sendSetCompressionRequest(compressionThreshold i
 }
 
 func (pph *PlayerPacketHandler) sendCancelLogin(reason *ChatMessage) error {
+	if reason == nil {
+		return nil
+	}
+
 	cancelLoginPacket := CancelLoginPacket.
 		New().
 		Set("reason", reason.Encode())
@@ -108,6 +112,10 @@ func (pph *PlayerPacketHandler) sendPlayPacket(entityID int32) error {
 }
 
 func (pph *PlayerPacketHandler) sendDisconnect(reason *ChatMessage) error {
+	if reason == nil {
+		return nil
+	}
+
 	disconnectPacket := DisconnectPacket.
 		New().
 		Set("reason", reason.Encode())

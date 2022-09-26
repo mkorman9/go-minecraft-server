@@ -3,6 +3,7 @@ package main
 import (
 	"math/rand"
 	"net"
+	"time"
 )
 
 type World struct {
@@ -88,6 +89,17 @@ func (w *World) BroadcastKeepAlive() {
 	w.PlayerList().All(func(p *Player) {
 		keepAliveID := rand.Int63()
 		p.SendKeepAlive(keepAliveID)
+	})
+}
+
+func (w *World) KickUnresponsivePlayers() {
+	timeout := w.Settings().PlayerTimeout * time.Second
+
+	w.PlayerList().All(func(p *Player) {
+		timeSinceLastHeartbeat := time.Now().Sub(p.lastHeartbeat)
+		if timeSinceLastHeartbeat > timeout {
+			p.Kick(NewChatMessage("Timed out"))
+		}
 	})
 }
 

@@ -20,6 +20,8 @@ func (bj *BackgroundJob) Start() {
 }
 
 func (bj *BackgroundJob) startKeepAliveDaemon() {
+	keepAliveSendInterval := bj.world.Settings().KeepAliveSendInterval * time.Second
+
 	go func() {
 		defer func() {
 			if r := recover(); r != nil {
@@ -30,7 +32,8 @@ func (bj *BackgroundJob) startKeepAliveDaemon() {
 
 		for {
 			bj.world.BroadcastKeepAlive()
-			time.Sleep(KeepAliveSendInterval)
+			bj.world.KickUnresponsivePlayers()
+			time.Sleep(keepAliveSendInterval)
 		}
 	}()
 }

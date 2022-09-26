@@ -12,14 +12,16 @@ func main() {
 	log.SetFlags(log.LstdFlags | log.Lshortfile)
 
 	settings := &Settings{
-		ServerAddress:        "0.0.0.0:25565",
-		Description:          "Simple Go Server",
-		MaxPlayers:           2137,
-		OnlineMode:           false,
-		CompressionThreshold: -1,
-		IsDebug:              true,
-		ViewDistance:         10,
-		SimulationDistance:   10,
+		ServerAddress:         "0.0.0.0:25565",
+		Description:           "Simple Go Server",
+		MaxPlayers:            2137,
+		OnlineMode:            false,
+		CompressionThreshold:  -1,
+		IsDebug:               true,
+		ViewDistance:          10,
+		SimulationDistance:    10,
+		KeepAliveSendInterval: 5,
+		PlayerTimeout:         15,
 	}
 
 	world, err := NewWorld(settings)

@@ -108,11 +108,14 @@ func (pph *PlayerPacketHandler) ReadLoop() {
 
 func (pph *PlayerPacketHandler) Cancel(reason *ChatMessage) {
 	pph.canceledMutex.Lock()
-	if pph.canceled {
-		return
-	}
-	pph.canceled = true
-	pph.canceledMutex.Unlock()
+	func() {
+		defer pph.canceledMutex.Unlock()
+
+		if pph.canceled {
+			return
+		}
+		pph.canceled = true
+	}()
 
 	switch pph.state {
 	case PlayerStateBeforeHandshake:
