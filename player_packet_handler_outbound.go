@@ -149,7 +149,7 @@ func (pph *PlayerPacketHandler) sendPositionUpdate(x float64, y float64, z float
 		Set("z", z).
 		Set("yaw", pph.player.Yaw).
 		Set("pitch", pph.player.Pitch).
-		Set("flags", 0).
+		Set("flags", byte(0)).
 		Set("teleportId", 0).
 		Set("dismountVehicle", false)
 
