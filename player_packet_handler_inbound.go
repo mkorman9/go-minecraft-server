@@ -81,6 +81,8 @@ func (pph *PlayerPacketHandler) OnPlayPacket(packetId int, packetReader io.Reade
 		return pph.OnSetCreativeSlot(packetReader)
 	case 0x2e:
 		return pph.OnArmAnimation(packetReader)
+	case 0x0b:
+		return pph.OnCloseWindow(packetReader)
 	default:
 		log.Printf("unrecognized packet id: 0x%x in play state\n", packetId)
 		return nil
@@ -357,6 +359,19 @@ func (pph *PlayerPacketHandler) OnArmAnimation(packetReader io.Reader) error {
 	}
 
 	pph.player.OnArmAnimation(armAnimationPacket.VarInt("hand"))
+
+	return nil
+}
+
+func (pph *PlayerPacketHandler) OnCloseWindow(packetReader io.Reader) error {
+	log.Println("received CloseWindow")
+
+	closeWindowPacket, err := CloseWindowPacket.Read(packetReader)
+	if err != nil {
+		return err
+	}
+
+	pph.player.OnCloseWindow(closeWindowPacket.Byte("windowId"))
 
 	return nil
 }

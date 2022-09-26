@@ -137,6 +137,10 @@ func (p *Player) OnArmAnimation(hand int) {
 
 }
 
+func (p *Player) OnCloseWindow(windowId byte) {
+
+}
+
 func (p *Player) OnChatCommand(command string, timestamp time.Time) {
 
 }

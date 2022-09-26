@@ -199,3 +199,12 @@ var EntityActionPacket = packets.Packet(
 	packets.VarInt("actionId"),
 	packets.VarInt("jumpBoost"),
 )
+
+/*
+	0x0b: Close Window
+*/
+
+var CloseWindowPacket = packets.Packet(
+	packets.ID(0x0b),
+	packets.Byte("windowId"),
+)
