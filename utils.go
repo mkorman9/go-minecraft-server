@@ -8,7 +8,6 @@ import (
 	"crypto/x509"
 	"encoding/binary"
 	"encoding/hex"
-	"github.com/gofrs/uuid"
 	"github.com/mkorman9/go-minecraft-server/types"
 	"net"
 	"strings"
@@ -21,17 +20,6 @@ func getSecureRandomString(lengthBytes int) (string, error) {
 	}
 
 	return hex.EncodeToString(buff), nil
-}
-
-func getRandomUUID() types.UUID {
-	v, _ := uuid.NewV4()
-	upper := int64(binary.BigEndian.Uint64(v[:8]))
-	lower := int64(binary.BigEndian.Uint64(v[8:]))
-
-	return types.UUID{
-		Upper: upper,
-		Lower: lower,
-	}
 }
 
 func loadPublicKey(publicKey []byte) (*rsa.PublicKey, error) {

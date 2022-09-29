@@ -1,5 +1,9 @@
 package types
 
+import (
+	"math/rand"
+)
+
 func GetVarIntSize(value int) int {
 	size := 0
 
@@ -14,4 +18,11 @@ func GetVarIntSize(value int) int {
 	}
 
 	return size
+}
+
+func GetRandomUUID() UUID {
+	return UUID{
+		Upper: rand.Int63(),
+		Lower: rand.Int63(),
+	}
 }

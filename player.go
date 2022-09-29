@@ -51,7 +51,7 @@ func NewPlayer(world *World, ip string) *Player {
 	return &Player{
 		Name:        "",
 		DisplayName: NewChatMessage(""),
-		UUID:        getRandomUUID(),
+		UUID:        types.GetRandomUUID(),
 		EntityID:    -1,
 		IP:          ip,
 		GameMode:    GameModeUnknown,

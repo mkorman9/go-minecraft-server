@@ -2,13 +2,16 @@ package main
 
 import (
 	"log"
+	"math/rand"
 	"net"
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 )
 
 func main() {
+	rand.Seed(time.Now().Unix())
 	log.SetFlags(log.LstdFlags | log.Lshortfile)
 
 	settings := &Settings{
