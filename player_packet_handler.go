@@ -41,11 +41,10 @@ type PlayerPacketHandler struct {
 	packetReader *packets.PacketReader
 	packetWriter *packets.PacketWriter
 
-	ip                          string
-	verifyToken                 string
-	sharedSecret                []byte
-	serverHash                  string
-	enabledCompressionThreshold int
+	ip           string
+	verifyToken  string
+	sharedSecret []byte
+	serverHash   string
 
 	canceled      bool
 	canceledMutex sync.Mutex
@@ -53,16 +52,15 @@ type PlayerPacketHandler struct {
 
 func NewPlayerPacketHandler(player *Player, world *World, connection net.Conn, ip string) *PlayerPacketHandler {
 	return &PlayerPacketHandler{
-		player:                      player,
-		world:                       world,
-		connection:                  connection,
-		state:                       PlayerStateBeforeHandshake,
-		packetReader:                packets.NewPacketReader(connection),
-		packetWriter:                packets.NewPacketWriter(connection),
-		ip:                          ip,
-		enabledCompressionThreshold: -1,
-		canceled:                    false,
-		canceledMutex:               sync.Mutex{},
+		player:        player,
+		world:         world,
+		connection:    connection,
+		state:         PlayerStateBeforeHandshake,
+		packetReader:  packets.NewPacketReader(connection),
+		packetWriter:  packets.NewPacketWriter(connection),
+		ip:            ip,
+		canceled:      false,
+		canceledMutex: sync.Mutex{},
 	}
 }
 
@@ -153,8 +151,6 @@ func (pph *PlayerPacketHandler) setupCompression() error {
 		if err != nil {
 			return err
 		}
-
-		pph.enabledCompressionThreshold = compressionThreshold
 
 		pph.packetReader.SetCompression(compressionThreshold)
 		pph.packetWriter.SetCompression(compressionThreshold)
