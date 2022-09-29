@@ -1,12 +1,14 @@
 package types
 
+import "math"
+
 type BitSet struct {
 	v []int64
 }
 
-func NewBitSet() BitSet {
-	return BitSet{
-		v: []int64{0},
+func NewBitSet(bits int) *BitSet {
+	return &BitSet{
+		v: make([]int64, int(math.Ceil(float64(bits)/64.0))),
 	}
 }
 

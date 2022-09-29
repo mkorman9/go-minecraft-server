@@ -1,6 +1,10 @@
 package main
 
-import "github.com/mkorman9/go-minecraft-server/packets"
+import (
+	"github.com/mkorman9/go-minecraft-server/chunk"
+	"github.com/mkorman9/go-minecraft-server/nbt"
+	"github.com/mkorman9/go-minecraft-server/packets"
+)
 
 /*
 	0x00: Handshake Response
@@ -226,105 +230,33 @@ var PlayerInfoPacket = packets.Packet(
 	0x1f: Map Chunk
 */
 
-//type MapChunkPacket struct {
-//	X                   int32
-//	Z                   int32
-//	Heightmaps          Heightmap
-//	ChunkData           ChunkData
-//	BlockEntities       []BlockEntity
-//	TrustEdges          bool
-//	SkyLightMask        *BitSet
-//	BlockLightMask      *BitSet
-//	EmptySkyLightMask   *BitSet
-//	EmptyBlockLightMask *BitSet
-//}
-//
-//func (mcp *MapChunkPacket) Marshal(writer *PacketSerializer) ([]byte, error) {
-//	skyLightMaskBits := mcp.SkyLightMask.BitsSet()
-//	blockLightMaskBits := mcp.BlockLightMask.BitsSet()
-//
-//	writer.AppendByte(0x1f)
-//	writer.AppendInt32(mcp.X)
-//	writer.AppendInt32(mcp.Z)
-//	writer.AppendNBT(&mcp.Heightmaps)
-//
-//	for _, chunkSection := range mcp.ChunkData.Data {
-//		writer.AppendInt16(chunkSection.BlockCount)
-//
-//		for _, blockState := range chunkSection.BlockStates {
-//			writer.AppendByte(blockState.BitsPerEntry)
-//
-//			switch {
-//			case blockState.BitsPerEntry == 0:
-//				writer.AppendVarInt(blockState.PaletteSingleValued.Value)
-//			case blockState.BitsPerEntry == 9:
-//			default:
-//				writer.AppendVarInt(len(blockState.PaletteIndirect.Palette))
-//				for _, p := range blockState.PaletteIndirect.Palette {
-//					writer.AppendVarInt(p)
-//				}
-//			}
-//
-//			writer.AppendVarInt(len(blockState.Data))
-//			for _, d := range blockState.Data {
-//				writer.AppendInt64(d)
-//			}
-//		}
-//
-//		for _, biome := range chunkSection.BlockStates {
-//			writer.AppendByte(biome.BitsPerEntry)
-//
-//			switch {
-//			case biome.BitsPerEntry == 0:
-//				writer.AppendVarInt(biome.PaletteSingleValued.Value)
-//			case biome.BitsPerEntry == 4:
-//			default:
-//				writer.AppendVarInt(len(biome.PaletteIndirect.Palette))
-//				for _, p := range biome.PaletteIndirect.Palette {
-//					writer.AppendVarInt(p)
-//				}
-//			}
-//
-//			writer.AppendVarInt(len(biome.Data))
-//			for _, d := range biome.Data {
-//				writer.AppendInt64(d)
-//			}
-//		}
-//	}
-//
-//	writer.AppendVarInt(len(mcp.BlockEntities))
-//	for _, entity := range mcp.BlockEntities {
-//		writer.AppendByte(entity.PackedXZ)
-//		writer.AppendInt16(entity.Y)
-//		writer.AppendVarInt(entity.Type)
-//		writer.AppendNBT(&entity.Data)
-//	}
-//
-//	writer.AppendBool(mcp.TrustEdges)
-//	writer.AppendBitSet(mcp.SkyLightMask)
-//	writer.AppendBitSet(mcp.BlockLightMask)
-//	writer.AppendBitSet(mcp.EmptySkyLightMask)
-//	writer.AppendBitSet(mcp.EmptyBlockLightMask)
-//
-//	writer.AppendVarInt(skyLightMaskBits)
-//	for i := 0; i < skyLightMaskBits; i++ {
-//		writer.AppendVarInt(2048)
-//		writer.AppendByteArray(make([]byte, 2048))
-//	}
-//
-//	writer.AppendVarInt(blockLightMaskBits)
-//	for i := 0; i < blockLightMaskBits; i++ {
-//		writer.AppendVarInt(2048)
-//		writer.AppendByteArray(make([]byte, 2048))
-//	}
-//
-//	if writer.Error() != nil {
-//		return nil, writer.Error()
-//	}
-//
-//	return writer.Bytes(), nil
-//}
-//
-//func (mcp *MapChunkPacket) Unmarshal(reader *PacketDeserializer) error {
-//	return nil
-//}
+var MapChunkPacket = packets.Packet(
+	packets.ID(0x1f),
+	packets.Int32("x"),
+	packets.Int32("z"),
+	packets.NBT("heightmaps", &chunk.Heightmap{}),
+	packets.ByteArray("data"),
+	packets.Array(
+		"blockEntities",
+		packets.ArrayLengthPrefixed,
+		packets.Byte("xz"),
+		packets.Int16("y"),
+		packets.VarInt("type"),
+		packets.NBT("data", &nbt.RawMessage{}),
+	),
+	packets.Bool("trustEdges"),
+	packets.BitSetField("skyLightMask"),
+	packets.BitSetField("blockLightMask"),
+	packets.BitSetField("emptySkyLightMask"),
+	packets.BitSetField("emptyBlockLightMask"),
+	packets.Array(
+		"skyLights",
+		packets.ArrayLengthPrefixed,
+		packets.ByteArray("value"),
+	),
+	packets.Array(
+		"blockLights",
+		packets.ArrayLengthPrefixed,
+		packets.ByteArray("value"),
+	),
+)

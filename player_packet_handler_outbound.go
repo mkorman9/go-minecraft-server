@@ -1,7 +1,10 @@
 package main
 
 import (
+	"bytes"
+	"github.com/mkorman9/go-minecraft-server/chunk"
 	"github.com/mkorman9/go-minecraft-server/packets"
+	"github.com/mkorman9/go-minecraft-server/types"
 	"log"
 )
 
@@ -220,4 +223,41 @@ func (pph *PlayerPacketHandler) sendPlayersRemoved(players []*Player) error {
 		)
 
 	return pph.packetWriter.Write(playerInfoPacket)
+}
+
+func (pph *PlayerPacketHandler) sendMapChunk() error {
+	var data bytes.Buffer
+	_, err := chunk.GenerateExampleChunk().WriteTo(&data)
+	if err != nil {
+		return err
+	}
+
+	mapChunkPacket := MapChunkPacket.
+		New().
+		Set("x", int32(0)).
+		Set("z", int32(0)).
+		Set("heightmaps", chunk.GenerateExampleHeightmap()).
+		Set("data", data.Bytes()).
+		SetArray(
+			"blockEntities",
+			packets.ConvertArrayValue(nil, func(block *chunk.BlockEntity, packet *packets.PacketData) {
+			}),
+		).
+		Set("trustEdges", true).
+		Set("skyLightMask", types.NewBitSet(64)).
+		Set("blockLightMask", types.NewBitSet(64)).
+		Set("emptySkyLightMask", types.NewBitSet(64)).
+		Set("emptyBlockLightMask", types.NewBitSet(64)).
+		SetArray(
+			"skyLights",
+			packets.ConvertArrayValue(nil, func(block *chunk.BlockEntity, packet *packets.PacketData) {
+			}),
+		).
+		SetArray(
+			"blockLights",
+			packets.ConvertArrayValue(nil, func(block *chunk.BlockEntity, packet *packets.PacketData) {
+			}),
+		)
+
+	return pph.packetWriter.Write(mapChunkPacket)
 }

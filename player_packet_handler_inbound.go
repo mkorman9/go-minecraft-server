@@ -483,5 +483,10 @@ func (pph *PlayerPacketHandler) OnJoin() error {
 		return err
 	}
 
+	err = pph.sendMapChunk()
+	if err != nil {
+		return err
+	}
+
 	return nil
 }

@@ -126,7 +126,7 @@ func (pd *PacketData) Any(name string) any {
 		return pd.Fields[i].Value
 	}
 
-	return 0
+	return nil
 }
 
 func (pd *PacketData) Array(name string) ArrayValue {
@@ -309,38 +309,38 @@ func (pd *PacketData) NBT(name string) any {
 	return nil
 }
 
-func (pd *PacketData) Position(name string) types.Position {
+func (pd *PacketData) Position(name string) *types.Position {
 	if i, ok := pd.namesMapping[name]; ok {
 		if pd.Fields[i].Type == TypePosition {
-			if value, ok := pd.Fields[i].Value.(types.Position); ok {
+			if value, ok := pd.Fields[i].Value.(*types.Position); ok {
 				return value
 			}
 		}
 	}
 
-	return types.Position{}
+	return nil
 }
 
-func (pd *PacketData) Slot(name string) types.SlotData {
+func (pd *PacketData) Slot(name string) *types.SlotData {
 	if i, ok := pd.namesMapping[name]; ok {
 		if pd.Fields[i].Type == TypeSlot {
-			if value, ok := pd.Fields[i].Value.(types.SlotData); ok {
+			if value, ok := pd.Fields[i].Value.(*types.SlotData); ok {
 				return value
 			}
 		}
 	}
 
-	return types.SlotData{}
+	return nil
 }
 
-func (pd *PacketData) BitSet(name string) types.BitSet {
+func (pd *PacketData) BitSet(name string) *types.BitSet {
 	if i, ok := pd.namesMapping[name]; ok {
 		if pd.Fields[i].Type == TypeBitSet {
-			if value, ok := pd.Fields[i].Value.(types.BitSet); ok {
+			if value, ok := pd.Fields[i].Value.(*types.BitSet); ok {
 				return value
 			}
 		}
 	}
 
-	return types.BitSet{}
+	return nil
 }

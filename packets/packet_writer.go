@@ -94,5 +94,6 @@ func (pw *PacketWriter) Write(packet *PacketData) error {
 			}
 		}
 	}
+
 	return nil
 }
